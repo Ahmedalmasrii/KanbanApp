@@ -24,7 +24,33 @@ const Login = () => {
     }
   };
 
-  
+
+  return (
+    <div className="h-screen flex items-center justify-center bg-gray-100">
+      <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-96 space-y-4">
+        <h2 className="text-xl font-bold text-center">🔐 Logga in</h2>
+
+        <input
+          type="email"
+          placeholder="E-post"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          className="w-full border px-3 py-2 rounded"
+        />
+
+        <input
+          type="password"
+          placeholder="Lösenord"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          className="w-full border px-3 py-2 rounded"
+        />
+
+      
+      </form>
+    </div>
+  );
+
 };
 
 export default Login;
