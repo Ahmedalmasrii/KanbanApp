@@ -230,6 +230,17 @@ const KanbanBoard = () => {
                             Levererad: {dayjs(item.deliveredAt).format("YYYY-MM-DD HH:mm")}
                           </p>
                         )}
+
+                        {/* Visar tilldelad användare eller ej tilldelad */}
+                        {item.assignedTo ? (
+                          <p className="text-xs mt-2 text-indigo-300">
+                            Tilldelad till: {item.assignedTo.username}
+                          </p>
+                        ) : (
+                          <p className="text-xs mt-2 text-gray-400">
+                            Ej tilldelad
+                          </p>
+                        )}
                       </div>
                     )}
                   </Draggable>
@@ -243,6 +254,7 @@ const KanbanBoard = () => {
     })}
   </div>
 </DragDropContext>
+
 
 
 
