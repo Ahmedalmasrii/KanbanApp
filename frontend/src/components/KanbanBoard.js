@@ -170,6 +170,29 @@ const KanbanBoard = () => {
           />
         </div>
 
+        <DragDropContext onDragEnd={onDragEnd}>
+  <div className="grid md:grid-cols-4 gap-6">
+    {Object.entries(columns).map(([columnId, column]) => (
+      <Droppable key={columnId} droppableId={columnId}>
+        {(provided) => (
+          <div
+            {...provided.droppableProps}
+            ref={provided.innerRef}
+            className="rounded-lg shadow p-4 min-h-[300px]"
+          >
+            <h2 className="text-xl font-semibold mb-4">
+              {column.name}
+            </h2>
+            <div className="space-y-4">
+              {provided.placeholder}
+            </div>
+          </div>
+        )}
+      </Droppable>
+    ))}
+  </div>
+</DragDropContext>
+
       </div>
 
       {selectedOrder && (
