@@ -168,7 +168,53 @@ const AdminPanel = () => {
           />
         </div>
 
-  
+        {/* Formulär för att skapa användare – endast i vyn 'all' */}
+        {view === 'all' && (
+          <form
+            onSubmit={createUser}
+            className={`mb-6 grid grid-cols-1 md:grid-cols-5 gap-4 p-4 rounded shadow ${darkMode ? 'bg-gray-800' : 'bg-white'}`}
+          >
+            <input
+              type="text"
+              placeholder="Namn"
+              value={newUser.username}
+              onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+              className="border p-2 rounded"
+            />
+            <input
+              type="email"
+              placeholder="E-post"
+              value={newUser.email}
+              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              className="border p-2 rounded"
+            />
+            <input
+              type="password"
+              placeholder="Lösenord"
+              value={newUser.password}
+              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              className="border p-2 rounded"
+            />
+            <select
+              value={newUser.role}
+              onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+              className="border p-2 rounded"
+            >
+              <option value="admin">admin</option>
+              <option value="manager">manager</option>
+              <option value="user">user</option>
+              <option value="viewer">viewer</option>
+            </select>
+            <button
+              type="submit"
+              className="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700"
+            >
+              Skapa användare
+            </button>
+          </form>
+        )}
+
+       
       </div>
     </div>
   );
