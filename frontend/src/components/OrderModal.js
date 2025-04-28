@@ -30,7 +30,29 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
       .catch(() => setManagers([]));
   }, [order._id]);
 
+  const handleSave = async () => {
+    try {
+      if (comment) {
+        await axios.post(`/orders/${order._id}/comments`, { text: comment }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
 
+      if (assignedTo) {
+        await axios.put(`/orders/${order._id}/assign`, { assignedTo }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+
+      fetchOrders();
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert('Kunde inte spara ändringar');
+    }
+  };
+
+  
 };
 
 export default OrderModal;
