@@ -126,7 +126,51 @@ const AdminPanel = () => {
   }
 //  Rendera adminpanelen med användarhantering, inklusive sökfält, tabell och formulär för att skapa nya användare
   return (
+    <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100'} min-h-screen p-6 transition`}>
+   
+      <Header />
+    
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold">⚙️ Adminpanel</h2>
+          
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="px-4 py-2 rounded border text-sm"
+          >
+            {darkMode ? '🌞 Ljust läge' : '🌙 Mörkt läge'}
+          </button>
+        </div>
 
+        {/* Flikar */}
+        <div className="flex space-x-4 mb-4">
+          <button
+            onClick={() => setView('all')}
+            className={`px-4 py-2 rounded ${view === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-300 text-black'}`}
+          >
+            👥 Alla användare
+          </button>
+          <button
+            onClick={() => setView('locked')}
+            className={`px-4 py-2 rounded ${view === 'locked' ? 'bg-red-600 text-white' : 'bg-gray-300 text-black'}`}
+          >
+            🚫 Inaktiva/Utlåsta konton
+          </button>
+        </div>
+
+        <div className="grid md:grid-cols-5 gap-4 mb-6">
+          <input
+            type="text"
+            placeholder="🔍 Sök efter användare..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="col-span-2 border p-2 rounded"
+          />
+        </div>
+
+  
+      </div>
+    </div>
   );
 };
 
