@@ -46,7 +46,12 @@ const Login = () => {
           className="w-full border px-3 py-2 rounded"
         />
 
-      
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+        >
+          Logga in
+        </button>
       </form>
     </div>
   );
