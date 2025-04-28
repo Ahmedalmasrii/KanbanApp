@@ -210,6 +210,17 @@ const KanbanBoard = () => {
                         {...(isManagerOrAdmin && provided.dragHandleProps)}
                         className="bg-gray-700 p-4 rounded-lg shadow text-white relative"
                       >
+                        {/* Redigeringsknapp (endast för manager/admin) */}
+                        {isManagerOrAdmin && (
+                          <button
+                            onClick={() => setSelectedOrder(item)}
+                            className="absolute top-2 right-2 text-gray-400 hover:text-white"
+                            title="Redigera"
+                          >
+                            ✏️
+                          </button>
+                        )}
+
                         <p className="font-medium">{item.item}</p>
 
                         {/* Visar skapad tid */}
@@ -267,6 +278,7 @@ const KanbanBoard = () => {
     })}
   </div>
 </DragDropContext>
+
 
 
 
