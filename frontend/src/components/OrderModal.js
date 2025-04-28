@@ -88,6 +88,20 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
           </>
         )}
 
+        <h3 className="font-medium mt-6 mb-2">🕓 Kommentarhistorik</h3>
+        <div className="bg-gray-100 p-2 rounded max-h-40 overflow-y-auto">
+          {timeline.length > 0 ? (
+            timeline.map((entry, index) => (
+              <div key={index} className="mb-2 text-sm">
+                <p><strong>{entry.user}</strong> - {new Date(entry.timestamp).toLocaleString()}</p>
+                <p className="ml-2">{entry.text}</p>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">Inga kommentarer ännu</p>
+          )}
+        </div>
+
       
       </div>
     </div>
