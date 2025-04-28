@@ -214,7 +214,76 @@ const AdminPanel = () => {
           </form>
         )}
 
-       
+        {/* Tabell */}
+        <table className={`w-full border shadow rounded text-sm ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <thead className={`${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+            <tr>
+              <th className="py-2 px-3 text-left">Namn</th>
+              <th className="py-2 px-3">E-post</th>
+              <th className="py-2 px-3">Roll</th>
+              <th className="py-2 px-3">Status</th>
+              <th className="py-2 px-3">Åtgärder</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredUsers.map((user) => (
+              <tr
+                key={user._id}
+                className="border-t hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                onClick={() => setSelectedUser(user)}
+              >
+                <td className="py-2 px-3 flex items-center gap-2">
+                  <div className="bg-blue-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
+                    {user.username[0]?.toUpperCase()}
+                  </div>
+                  {user.username}
+                </td>
+                <td className="py-2 px-3">{user.email}</td>
+                <td className="py-2 px-3">
+                  <select
+                    className="border rounded px-2 py-1"
+                    value={user.role}
+                    onChange={(e) => updateUser(user._id, { role: e.target.value })}
+                  >
+                    <option value="admin">admin</option>
+                    <option value="manager">manager</option>
+                    <option value="user">user</option>
+                    <option value="viewer">viewer</option>
+                  </select>
+                </td>
+                <td className="py-2 px-3 text-center">
+                  <input
+                    type="checkbox"
+                    checked={user.active}
+                    onChange={(e) => updateUser(user._id, { active: e.target.checked })}
+                  />
+                </td>
+                <td className="py-2 px-3 text-center space-x-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteUser(user._id);
+                    }}
+                    className="text-red-600 hover:underline"
+                  >
+                    Radera
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      resetPassword(user._id);
+                    }}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Återställ lösenord
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        
       </div>
     </div>
   );
