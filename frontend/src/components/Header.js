@@ -12,7 +12,13 @@ const Header = () => {
   };
 
   return (
+    <div className="flex justify-between items-center p-4 bg-gray-200 mb-4">
+      <span className="text-gray-800">
+        Inloggad som: <strong>{user?.role}</strong>
+      </span>
 
+   
+    </div>
   );
 };
 
