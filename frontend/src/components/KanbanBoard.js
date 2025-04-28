@@ -241,6 +241,19 @@ const KanbanBoard = () => {
                             Ej tilldelad
                           </p>
                         )}
+
+                        {/* Statusbadge */}
+                        <p
+                          className={`text-xs mt-2 inline-block px-2 py-1 rounded font-medium ${
+                            item.status === "todo"
+                              ? "bg-yellow-500 text-black"
+                              : item.status === "ordered"
+                              ? "bg-blue-500"
+                              : "bg-green-500"
+                          }`}
+                        >
+                          {column.name}
+                        </p>
                       </div>
                     )}
                   </Draggable>
@@ -254,6 +267,7 @@ const KanbanBoard = () => {
     })}
   </div>
 </DragDropContext>
+
 
 
 
