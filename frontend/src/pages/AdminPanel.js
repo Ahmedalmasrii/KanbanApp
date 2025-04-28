@@ -282,6 +282,24 @@ const AdminPanel = () => {
             ))}
           </tbody>
         </table>
+
+        {/* Detaljpanel */}
+        {selectedUser && (
+          <div className={`mt-6 p-4 rounded shadow ${darkMode ? 'bg-gray-800 text-white' : 'bg-white'}`}>
+            <h3 className="text-lg font-semibold mb-2">📄 Användardetaljer</h3>
+            <p><strong>Namn:</strong> {selectedUser.username}</p>
+            <p><strong>E-post:</strong> {selectedUser.email}</p>
+            <p><strong>Roll:</strong> {selectedUser.role}</p>
+            <p><strong>Status:</strong> {selectedUser.active ? 'Aktiv' : 'Inaktiv'}</p>
+            <p><strong>Kontolåsning:</strong> {selectedUser.lockUntil ? new Date(selectedUser.lockUntil).toLocaleString() : 'Ej låst'}</p>
+            <button
+              onClick={() => setSelectedUser(null)}
+              className="mt-3 text-blue-600 hover:underline"
+            >
+              Stäng
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
