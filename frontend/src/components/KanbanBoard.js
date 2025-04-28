@@ -211,6 +211,25 @@ const KanbanBoard = () => {
                         className="bg-gray-700 p-4 rounded-lg shadow text-white relative"
                       >
                         <p className="font-medium">{item.item}</p>
+
+                        {/* Visar skapad tid */}
+                        <p className="text-sm text-gray-300 mt-1">
+                          {item.createdAt && `Skapad: ${dayjs(item.createdAt).format("YYYY-MM-DD HH:mm")}`}
+                        </p>
+
+                        {/* Visar beställd tid om finns */}
+                        {item.orderedAt && (
+                          <p className="text-sm text-blue-300">
+                            Beställd: {dayjs(item.orderedAt).format("YYYY-MM-DD HH:mm")}
+                          </p>
+                        )}
+
+                        {/* Visar levererad tid om finns */}
+                        {item.deliveredAt && (
+                          <p className="text-sm text-green-300">
+                            Levererad: {dayjs(item.deliveredAt).format("YYYY-MM-DD HH:mm")}
+                          </p>
+                        )}
                       </div>
                     )}
                   </Draggable>
@@ -224,6 +243,7 @@ const KanbanBoard = () => {
     })}
   </div>
 </DragDropContext>
+
 
 
 
