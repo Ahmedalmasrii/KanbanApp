@@ -172,26 +172,40 @@ const KanbanBoard = () => {
 
         <DragDropContext onDragEnd={onDragEnd}>
   <div className="grid md:grid-cols-4 gap-6">
-    {Object.entries(columns).map(([columnId, column]) => (
-      <Droppable key={columnId} droppableId={columnId}>
-        {(provided) => (
-          <div
-            {...provided.droppableProps}
-            ref={provided.innerRef}
-            className="rounded-lg shadow p-4 min-h-[300px]"
-          >
-            <h2 className="text-xl font-semibold mb-4">
-              {column.name}
-            </h2>
-            <div className="space-y-4">
-              {provided.placeholder}
+    {Object.entries(columns).map(([columnId, column]) => {
+      const isToDo = columnId === "toDo";
+      const isAssigned = columnId === "assigned";
+      const bgColor =
+        isToDo && column.items.length > 5
+          ? "bg-red-800"
+          : isToDo
+          ? "bg-green-800"
+          : isAssigned
+          ? "bg-indigo-800"
+          : "bg-gray-800";
+
+      return (
+        <Droppable key={columnId} droppableId={columnId}>
+          {(provided) => (
+            <div
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+              className={`${bgColor} rounded-lg shadow p-4 min-h-[300px]`}
+            >
+              <h2 className="text-xl font-semibold mb-4">
+                {column.name}
+              </h2>
+              <div className="space-y-4">
+                {provided.placeholder}
+              </div>
             </div>
-          </div>
-        )}
-      </Droppable>
-    ))}
+          )}
+        </Droppable>
+      );
+    })}
   </div>
 </DragDropContext>
+
 
       </div>
 
