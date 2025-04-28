@@ -22,3 +22,6 @@ backend/node_modules/
 
 # React build
 frontend/build/
+
+package.json
+package-lock.json
