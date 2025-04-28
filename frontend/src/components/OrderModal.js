@@ -102,7 +102,14 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
           )}
         </div>
 
-      
+        <div className="flex justify-end mt-6 gap-3">
+          <button onClick={onClose} className="px-4 py-2 bg-gray-400 rounded hover:bg-gray-500 text-white">
+            Avbryt
+          </button>
+          <button onClick={handleSave} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white">
+            Spara
+          </button>
+        </div>
       </div>
     </div>
   );
