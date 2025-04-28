@@ -196,6 +196,25 @@ const KanbanBoard = () => {
                 {column.name}
               </h2>
               <div className="space-y-4">
+                {filterAndSort(column.items).map((item, index) => (
+                  <Draggable
+                    key={item._id}
+                    draggableId={item._id}
+                    index={index}
+                    isDragDisabled={!isManagerOrAdmin}
+                  >
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...(isManagerOrAdmin && provided.dragHandleProps)}
+                        className="bg-gray-700 p-4 rounded-lg shadow text-white relative"
+                      >
+                        <p className="font-medium">{item.item}</p>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
                 {provided.placeholder}
               </div>
             </div>
@@ -205,6 +224,7 @@ const KanbanBoard = () => {
     })}
   </div>
 </DragDropContext>
+
 
 
       </div>
