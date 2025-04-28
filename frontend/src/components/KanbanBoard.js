@@ -137,7 +137,50 @@ const KanbanBoard = () => {
     }
   };
 
+  return (
+    <>
+      <Header />
+      <div className="bg-gray-900 text-white min-h-screen p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">📦 Beställnings-Kanban</h1>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ny beställning"
+              className="bg-gray-700 text-white border border-gray-600 rounded px-3 py-2"
+            />
+            <button
+              onClick={handleAddItem}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+            >
+              Lägg till
+            </button>
+          </div>
+        </div>
 
+        <div className="flex gap-4 mb-6">
+          <input
+            type="text"
+            placeholder="🔍 Sök..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="text-black px-3 py-2 rounded border"
+          />
+        </div>
+
+      </div>
+
+      {selectedOrder && (
+        <OrderModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          fetchOrders={fetchOrders}
+        />
+      )}
+    </>
+  );
 };
 
 export default KanbanBoard;
