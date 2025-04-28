@@ -20,7 +20,24 @@ const ChangePassword = () => {
     }
   };
 
-
+  return (
+    <div className="flex flex-col items-center mt-20 gap-4">
+      <h2 className="text-xl font-bold">Byt lösenord</h2>
+      <input
+        type="password"
+        placeholder="Nytt lösenord"
+        value={newPassword}
+        onChange={(e) => setNewPassword(e.target.value)}
+        className="border px-4 py-2 rounded"
+      />
+      <button
+        onClick={handleChange}
+        className="bg-green-600 text-white px-4 py-2 rounded"
+      >
+        Uppdatera lösenord
+      </button>
+    </div>
+  );
 };
 
 export default ChangePassword;
