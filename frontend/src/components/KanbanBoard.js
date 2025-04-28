@@ -171,120 +171,122 @@ const KanbanBoard = () => {
         </div>
 
         <DragDropContext onDragEnd={onDragEnd}>
-  <div className="grid md:grid-cols-4 gap-6">
-    {Object.entries(columns).map(([columnId, column]) => {
-      const isToDo = columnId === "toDo";
-      const isAssigned = columnId === "assigned";
-      const bgColor =
-        isToDo && column.items.length > 5
-          ? "bg-red-800"
-          : isToDo
-          ? "bg-green-800"
-          : isAssigned
-          ? "bg-indigo-800"
-          : "bg-gray-800";
+          <div className="grid md:grid-cols-4 gap-6">
+            {Object.entries(columns).map(([columnId, column]) => {
+              const isToDo = columnId === "toDo";
+              const isAssigned = columnId === "assigned";
+              const bgColor =
+                isToDo && column.items.length > 5
+                  ? "bg-red-800"
+                  : isToDo
+                  ? "bg-green-800"
+                  : isAssigned
+                  ? "bg-indigo-800"
+                  : "bg-gray-800";
 
-      return (
-        <Droppable key={columnId} droppableId={columnId}>
-          {(provided) => (
-            <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className={`${bgColor} rounded-lg shadow p-4 min-h-[300px]`}
-            >
-              <h2 className="text-xl font-semibold mb-4">
-                {column.name}
-              </h2>
-              <div className="space-y-4">
-                {filterAndSort(column.items).map((item, index) => (
-                  <Draggable
-                    key={item._id}
-                    draggableId={item._id}
-                    index={index}
-                    isDragDisabled={!isManagerOrAdmin}
-                  >
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...(isManagerOrAdmin && provided.dragHandleProps)}
-                        className="bg-gray-700 p-4 rounded-lg shadow text-white relative"
-                      >
-                        {/* Redigeringsknapp (endast för manager/admin) */}
-                        {isManagerOrAdmin && (
-                          <button
-                            onClick={() => setSelectedOrder(item)}
-                            className="absolute top-2 right-2 text-gray-400 hover:text-white"
-                            title="Redigera"
+              return (
+                <Droppable key={columnId} droppableId={columnId}>
+                  {(provided) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className={`${bgColor} rounded-lg shadow p-4 min-h-[300px]`}
+                    >
+                      <h2 className="text-xl font-semibold mb-4">
+                        {column.name}
+                      </h2>
+                      <div className="space-y-4">
+                        {filterAndSort(column.items).map((item, index) => (
+                          <Draggable
+                            key={item._id}
+                            draggableId={item._id}
+                            index={index}
+                            isDragDisabled={!isManagerOrAdmin}
                           >
-                            ✏️
-                          </button>
-                        )}
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...(isManagerOrAdmin &&
+                                  provided.dragHandleProps)}
+                                className="bg-gray-700 p-4 rounded-lg shadow text-white relative"
+                              >
+                                <p className="font-medium">{item.item}</p>
 
-                        <p className="font-medium">{item.item}</p>
+                                {/* Visar skapad tid */}
+                                <p className="text-sm text-gray-300 mt-1">
+                                  {item.createdAt &&
+                                    `Skapad: ${dayjs(item.createdAt).format(
+                                      "YYYY-MM-DD HH:mm"
+                                    )}`}
+                                </p>
 
-                        {/* Visar skapad tid */}
-                        <p className="text-sm text-gray-300 mt-1">
-                          {item.createdAt && `Skapad: ${dayjs(item.createdAt).format("YYYY-MM-DD HH:mm")}`}
-                        </p>
+                                {/* Visar beställd tid om finns */}
+                                {item.orderedAt && (
+                                  <p className="text-sm text-blue-300">
+                                    Beställd:{" "}
+                                    {dayjs(item.orderedAt).format(
+                                      "YYYY-MM-DD HH:mm"
+                                    )}
+                                  </p>
+                                )}
 
-                        {/* Visar beställd tid om finns */}
-                        {item.orderedAt && (
-                          <p className="text-sm text-blue-300">
-                            Beställd: {dayjs(item.orderedAt).format("YYYY-MM-DD HH:mm")}
-                          </p>
-                        )}
+                                {/* Visar levererad tid om finns */}
+                                {item.deliveredAt && (
+                                  <p className="text-sm text-green-300">
+                                    Levererad:{" "}
+                                    {dayjs(item.deliveredAt).format(
+                                      "YYYY-MM-DD HH:mm"
+                                    )}
+                                  </p>
+                                )}
 
-                        {/* Visar levererad tid om finns */}
-                        {item.deliveredAt && (
-                          <p className="text-sm text-green-300">
-                            Levererad: {dayjs(item.deliveredAt).format("YYYY-MM-DD HH:mm")}
-                          </p>
-                        )}
+                                {/* Visar tilldelad användare eller ej tilldelad */}
+                                {item.assignedTo ? (
+                                  <p className="text-xs mt-2 text-indigo-300">
+                                    👤 Tilldelad till:{" "}
+                                    {item.assignedTo.username}
+                                  </p>
+                                ) : (
+                                  <p className="text-xs mt-2 text-gray-400">
+                                    🚫 Ej tilldelad
+                                  </p>
+                                )}
 
-                        {/* Visar tilldelad användare eller ej tilldelad */}
-                        {item.assignedTo ? (
-                          <p className="text-xs mt-2 text-indigo-300">
-                            Tilldelad till: {item.assignedTo.username}
-                          </p>
-                        ) : (
-                          <p className="text-xs mt-2 text-gray-400">
-                            Ej tilldelad
-                          </p>
-                        )}
-
-                        {/* Statusbadge */}
-                        <p
-                          className={`text-xs mt-2 inline-block px-2 py-1 rounded font-medium ${
-                            item.status === "todo"
-                              ? "bg-yellow-500 text-black"
-                              : item.status === "ordered"
-                              ? "bg-blue-500"
-                              : "bg-green-500"
-                          }`}
-                        >
-                          {column.name}
-                        </p>
+                                {/* Statusbadge */}
+                                <p
+                                  className={`text-xs mt-2 inline-block px-2 py-1 rounded font-medium ${
+                                    item.status === "todo"
+                                      ? "bg-yellow-500 text-black"
+                                      : item.status === "ordered"
+                                      ? "bg-blue-500"
+                                      : "bg-green-500"
+                                  }`}
+                                >
+                                  {column.name}
+                                </p>
+                                {isManagerOrAdmin && (
+                                  <button
+                                    onClick={() => setSelectedOrder(item)}
+                                    className="absolute top-2 right-2 text-gray-400 hover:text-white"
+                                    title="Redigera"
+                                  >
+                                    ✏️
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
                       </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            </div>
-          )}
-        </Droppable>
-      );
-    })}
-  </div>
-</DragDropContext>
-
-
-
-
-
-
-
+                    </div>
+                  )}
+                </Droppable>
+              );
+            })}
+          </div>
+        </DragDropContext>
       </div>
 
       {selectedOrder && (
