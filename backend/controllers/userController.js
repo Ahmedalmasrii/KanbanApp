@@ -65,3 +65,46 @@ exports.updateUser = async (req, res) => {
     res.status(500).json({ msg: 'Kunde inte uppdatera användare' });
   }
 };
+
+// Radera användare
+exports.deleteUser = async (req, res) => {
+  try {
+    const deleted = await User.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      return res.status(404).json({ msg: 'Användare hittades inte' });
+    }
+
+    res.json({ message: 'Användare raderad' });
+  } catch (err) {
+    res.status(500).json({ msg: 'Kunde inte radera användare' });
+  }
+};
+
+// Återställ lösenord
+exports.resetPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).json({ msg: 'Nytt lösenord krävs' });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    const updatedUser = await User.findByIdAndUpdate(id, {
+      password: hashed,
+      tempPassword: true,
+      loginAttempts: 0,
+      active: true,
+      lockUntil: null
+    }, { new: true });
+
+    if (!updatedUser) return res.status(404).json({ msg: 'Användare hittades inte' });
+
+    res.json({ msg: 'Lösenord återställdes' });
+  } catch (err) {
+    console.error('Fel vid återställning:', err);
+    res.status(500).json({ msg: 'Serverfel vid återställning' });
+  }
+};
