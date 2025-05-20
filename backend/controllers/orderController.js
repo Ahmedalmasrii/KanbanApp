@@ -22,3 +22,19 @@ exports.createOrder = async (req, res) => {
     res.status(500).json({ msg: 'Kunde inte skapa beställning' });
   }
 };
+
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const updateFields = { status };
+    if (status === 'ordered') updateFields.orderedAt = new Date();
+    if (status === 'delivered') updateFields.deliveredAt = new Date();
+
+    const updated = await Order.findByIdAndUpdate(id, updateFields, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ msg: 'Kunde inte uppdatera beställning' });
+  }
+};
