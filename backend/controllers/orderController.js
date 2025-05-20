@@ -38,3 +38,32 @@ exports.updateOrderStatus = async (req, res) => {
     res.status(500).json({ msg: 'Kunde inte uppdatera beställning' });
   }
 };
+
+exports.updateOrderDetails = async (req, res) => {
+  try {
+    const { assignedTo, comment } = req.body;
+    const update = {};
+    
+    if (assignedTo) update.assignedTo = assignedTo;
+
+    if (comment) {
+      update.$push = {
+        comments: {
+          user: req.user.username,
+          text: comment
+        }
+      };
+    }
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      req.params.id,
+      update,
+      { new: true }
+    ).populate('assignedTo');
+
+    if (!updatedOrder) return res.status(404).json({ msg: 'Beställning hittades inte' });
+    res.json(updatedOrder);
+  } catch (err) {
+    res.status(500).json({ msg: 'Kunde inte uppdatera beställningen', error: err.message });
+  }
+};
