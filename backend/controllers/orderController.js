@@ -67,3 +67,51 @@ exports.updateOrderDetails = async (req, res) => {
     res.status(500).json({ msg: 'Kunde inte uppdatera beställningen', error: err.message });
   }
 };
+
+exports.deleteOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ msg: 'Beställning hittades inte' });
+
+    if (order.status !== 'delivered') {
+      return res.status(403).json({ msg: 'Endast levererade beställningar kan tas bort' });
+    }
+
+    await order.deleteOne();
+    res.status(200).json({ msg: 'Beställning borttagen' });
+  } catch (err) {
+    res.status(500).json({ msg: 'Serverfel vid radering', error: err.message });
+  }
+};
+
+exports.getOrderComments = async (req, res) => {
+  try {
+    const comments = await Comment.find({ orderId: req.params.id }).sort({ timestamp: 1 });
+    res.json(comments);
+  } catch {
+    res.status(500).json({ msg: 'Kunde inte hämta kommentarer' });
+  }
+};
+
+exports.addOrderComment = async (req, res) => {
+  try {
+    const newComment = new Comment({
+      orderId: req.params.id,
+      user: req.user.username,
+      text: req.body.text,
+    });
+    await newComment.save();
+    res.status(201).json({ msg: 'Kommentar tillagd' });
+  } catch {
+    res.status(500).json({ msg: 'Kunde inte lägga till kommentar' });
+  }
+};
+
+exports.assignManager = async (req, res) => {
+  try {
+    const updated = await Order.findByIdAndUpdate(req.params.id, { assignedTo: req.body.assignedTo }, { new: true });
+    res.json(updated);
+  } catch {
+    res.status(500).json({ msg: 'Kunde inte tilldela chef' });
+  }
+};
