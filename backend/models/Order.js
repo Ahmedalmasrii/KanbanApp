@@ -12,6 +12,7 @@ const orderSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   orderedAt: Date,
   deliveredAt: Date,
+  dueDate: Date,
   comment: String,
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   comments: [commentSchema],
