@@ -18,6 +18,17 @@ const Header = () => {
       </span>
 
       <div className="flex gap-2">
+        {/* Statistikpanel – för admin eller manager */}
+        {(user?.role === 'admin' || user?.role === 'manager') && (
+          <button
+            onClick={() => navigate('/stats')}
+            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+          >
+            📊 Statistik
+          </button>
+        )}
+
+        {/* Adminpanel – endast för admin */}
         {user?.role === 'admin' && (
           <button
             onClick={() => navigate('/admin')}
