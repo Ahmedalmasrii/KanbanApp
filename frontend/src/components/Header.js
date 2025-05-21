@@ -1,51 +1,55 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Header = () => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user'));
+  const location = useLocation();
+  const user = JSON.parse(localStorage.getItem("user"));
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    navigate('/login');
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    navigate("/login");
   };
 
   return (
-    <div className="flex justify-between items-center p-4 bg-gray-200 mb-4">
-      <span className="text-gray-800">
-        Inloggad som: <strong>{user?.role}</strong>
-      </span>
+    <header className="bg-gradient-to-r from-slate-900 to-slate-800 text-white px-6 py-4 shadow-md flex justify-between items-center border-b border-slate-700">
+      <div className="flex items-center gap-4">
+        <h1 className="text-lg font-semibold flex items-center gap-2">
+          📌 {location.pathname === "/stats" ? "Statistikpanel" : "Beställnings-Kanban"}
+        </h1>
+        <span className="text-sm bg-slate-700 px-3 py-1 rounded-full text-white border border-slate-500">
+          Inloggad som: <strong>{user?.username}</strong> ({user?.role})
+        </span>
+      </div>
 
-      <div className="flex gap-2">
-        {/* Statistikpanel – för admin eller manager */}
-        {(user?.role === 'admin' || user?.role === 'manager') && (
+      <div className="flex gap-3">
+        {user?.role === "admin" || user?.role === "manager" ? (
           <button
-            onClick={() => navigate('/stats')}
-            className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+            onClick={() => navigate("/stats")}
+            className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg shadow text-white text-sm transition"
           >
             📊 Statistik
           </button>
-        )}
+        ) : null}
 
-        {/* Adminpanel – endast för admin */}
-        {user?.role === 'admin' && (
+        {location.pathname === "/stats" && (
           <button
-            onClick={() => navigate('/admin')}
-            className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
+            onClick={() => navigate("/kanban")}
+            className="bg-slate-600 hover:bg-slate-700 px-4 py-2 rounded-lg shadow text-white text-sm transition"
           >
-            Adminpanel
+            ⬅️ Tillbaka
           </button>
         )}
 
         <button
           onClick={handleLogout}
-          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+          className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg shadow text-white text-sm transition"
         >
           Logga ut
         </button>
       </div>
-    </div>
+    </header>
   );
 };
 
