@@ -94,12 +94,20 @@ const AdminPanel = () => {
     }
   };
 
-  const refreshData = () => {
-    if (view === 'locked') {
-      fetchLockedUsers();
-    } else {
-      fetchUsers();
+  const reactivateAll = async () => {
+    if (window.confirm('Återställ alla inaktiva eller låsta konton?')) {
+      try {
+        await axios.put('/users/reactivate-all');
+        refreshData();
+        alert('Alla konton har återställts.');
+      } catch {
+        alert('Kunde inte återställa konton.');
+      }
     }
+  };
+
+  const refreshData = () => {
+    view === 'locked' ? fetchLockedUsers() : fetchUsers();
   };
 
   useEffect(() => {
@@ -107,7 +115,6 @@ const AdminPanel = () => {
       refreshData();
     }
   }, [view]);
-
   const filteredUsers = users.filter(
     (u) =>
       u.username.toLowerCase().includes(search.toLowerCase()) ||
@@ -156,6 +163,21 @@ const AdminPanel = () => {
           >
             🚫 Inaktiva/Utlåsta konton
           </button>
+          <button
+    onClick={async () => {
+      if (window.confirm('Återställ alla inaktiva eller låsta konton?')) {
+        try {
+          await axios.put('/users/reactivate-all');
+          refreshData(); // Uppdatera listan
+        } catch (err) {
+          alert('Kunde inte återställa konton');
+        }
+      }
+    }}
+    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+  >
+     Återställ alla konton
+  </button>
         </div>
 
         <div className="grid md:grid-cols-5 gap-4 mb-6">
