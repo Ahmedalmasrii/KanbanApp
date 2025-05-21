@@ -142,7 +142,10 @@ const KanbanBoard = () => {
       <Header />
       <div className="bg-gray-900 text-white min-h-screen p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">📦 Beställnings-Kanban</h1>
+          <h1 className="text-3xl font-extrabold text-white mb-6 text-center">
+            📋 Beställnings-Kanban
+          </h1>
+
           <div className="flex gap-2">
             <input
               type="text"
@@ -153,7 +156,7 @@ const KanbanBoard = () => {
             />
             <button
               onClick={handleAddItem}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition transform hover:scale-105"
             >
               Lägg till
             </button>
@@ -190,7 +193,7 @@ const KanbanBoard = () => {
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className={`${bgColor} rounded-lg shadow p-4 min-h-[300px]`}
+                      className={`rounded-xl bg-gradient-to-b from-slate-800 to-slate-900 shadow-xl p-4 min-h-[400px] border border-slate-700`}
                     >
                       <h2 className="text-xl font-semibold mb-4">
                         {column.name}
@@ -209,7 +212,7 @@ const KanbanBoard = () => {
                                 {...provided.draggableProps}
                                 {...(isManagerOrAdmin &&
                                   provided.dragHandleProps)}
-                                className="bg-gray-700 p-4 rounded-lg shadow text-white relative"
+                                className="bg-slate-700 p-4 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out text-white relative border border-slate-600"
                               >
                                 <p className="font-medium">{item.item}</p>
 
