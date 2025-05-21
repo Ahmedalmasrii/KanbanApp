@@ -57,24 +57,11 @@ const KanbanBoard = () => {
 
   const handleAddItem = async () => {
     if (!input.trim()) return;
-    const res = await axios.post("/orders", { item: input });
-    setColumns((prev) => ({
-      ...prev,
-      toDo: {
-        ...prev.toDo,
-        items: [
-          ...prev.toDo.items,
-          {
-            id: res.data._id,
-            item: res.data.item,
-            status: "todo",
-            createdAt: res.data.createdAt,
-          },
-        ],
-      },
-    }));
+    await axios.post("/orders", { item: input });
     setInput("");
+    fetchOrders(); // ✅ Ladda om full data inkl. dueDate
   };
+  
 
   const onDragEnd = async (result) => {
     if (!isManagerOrAdmin) return;
@@ -243,6 +230,15 @@ const KanbanBoard = () => {
                                     )}
                                   </p>
                                 )}
+       {/* Visar förfallodatum om finns */}
+{item.dueDate && (
+  <p className="text-sm text-red-300">
+    ⏰ Förfallodatum:{" "}
+    {dayjs(item.dueDate).format("YYYY-MM-DD")}
+  </p>
+)}
+
+
 
                                 {/* Visar tilldelad användare eller ej tilldelad */}
                                 {item.assignedTo ? (

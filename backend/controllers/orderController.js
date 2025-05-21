@@ -12,10 +12,16 @@ exports.getOrders = async (req, res) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    const { item } = req.body;
+    const { item, dueDate } = req.body;
     if (!item) return res.status(400).json({ msg: 'Beställning saknar innehåll' });
 
-    const newOrder = new Order({ item, status: 'todo', createdBy: req.user.id });
+    const newOrder = new Order({
+      item,
+      status: 'todo',
+      createdBy: req.user.id,
+      dueDate: dueDate || null
+    });
+
     await newOrder.save();
     res.status(201).json(newOrder);
   } catch (err) {
@@ -26,11 +32,12 @@ exports.createOrder = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, dueDate } = req.body;
 
     const updateFields = { status };
     if (status === 'ordered') updateFields.orderedAt = new Date();
     if (status === 'delivered') updateFields.deliveredAt = new Date();
+    if (dueDate) updateFields.dueDate = dueDate;
 
     const updated = await Order.findByIdAndUpdate(id, updateFields, { new: true });
     res.json(updated);
@@ -41,10 +48,11 @@ exports.updateOrderStatus = async (req, res) => {
 
 exports.updateOrderDetails = async (req, res) => {
   try {
-    const { assignedTo, comment } = req.body;
+    const { assignedTo, comment, dueDate } = req.body;
     const update = {};
-    
+
     if (assignedTo) update.assignedTo = assignedTo;
+    if (dueDate) update.dueDate = dueDate;
 
     if (comment) {
       update.$push = {
@@ -109,7 +117,11 @@ exports.addOrderComment = async (req, res) => {
 
 exports.assignManager = async (req, res) => {
   try {
-    const updated = await Order.findByIdAndUpdate(req.params.id, { assignedTo: req.body.assignedTo }, { new: true });
+    const updated = await Order.findByIdAndUpdate(
+      req.params.id,
+      { assignedTo: req.body.assignedTo },
+      { new: true }
+    );
     res.json(updated);
   } catch {
     res.status(500).json({ msg: 'Kunde inte tilldela chef' });
