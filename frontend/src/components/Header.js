@@ -1,55 +1,77 @@
-import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem('user'));
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    navigate("/login");
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  const handleHome = () => {
+    navigate('/kanban');
   };
 
   return (
-    <header className="bg-gradient-to-r from-slate-900 to-slate-800 text-white px-6 py-4 shadow-md flex justify-between items-center border-b border-slate-700">
+    <div className="flex justify-between items-center p-4 bg-gradient-to-r from-purple-900 to-blue-900 text-white shadow-md">
       <div className="flex items-center gap-4">
-        <h1 className="text-lg font-semibold flex items-center gap-2">
-          📌 {location.pathname === "/stats" ? "Statistikpanel" : "Beställnings-Kanban"}
-        </h1>
-        <span className="text-sm bg-slate-700 px-3 py-1 rounded-full text-white border border-slate-500">
-          Inloggad som: <strong>{user?.username}</strong> ({user?.role})
+        <span className="text-lg font-bold">📦 Beställnings-Kanban</span>
+        <span className="text-sm bg-indigo-600 px-2 py-1 rounded">
+          Inloggad som: <strong>{user?.role}</strong>
         </span>
+        <span className="text-sm text-gray-300">🕒 {time.toLocaleTimeString()}</span>
       </div>
 
-      <div className="flex gap-3">
-        {user?.role === "admin" || user?.role === "manager" ? (
+      <div className="flex items-center gap-2">
+        {location.pathname !== '/kanban' && (
           <button
-            onClick={() => navigate("/stats")}
-            className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg shadow text-white text-sm transition"
-          >
-            📊 Statistik
-          </button>
-        ) : null}
-
-        {location.pathname === "/stats" && (
-          <button
-            onClick={() => navigate("/kanban")}
-            className="bg-slate-600 hover:bg-slate-700 px-4 py-2 rounded-lg shadow text-white text-sm transition"
+            onClick={handleBack}
+            className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded shadow"
           >
             ⬅️ Tillbaka
           </button>
         )}
 
+        {user && (
+          <button
+            onClick={handleHome}
+            className="bg-blue-700 hover:bg-blue-600 text-white px-3 py-1 rounded shadow"
+          >
+            🏠 Hem
+          </button>
+        )}
+
+        {(user?.role === 'admin' || user?.role === 'manager') && (
+          <button
+            onClick={() => navigate('/stats')}
+            className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1 rounded shadow"
+          >
+            📊 Statistik
+          </button>
+        )}
+
         <button
           onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg shadow text-white text-sm transition"
+          className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded shadow"
         >
-          Logga ut
+          🔒 Logga ut
         </button>
       </div>
-    </header>
+    </div>
   );
 };
 
