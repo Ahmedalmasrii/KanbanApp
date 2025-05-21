@@ -61,7 +61,6 @@ const KanbanBoard = () => {
     setInput("");
     fetchOrders(); // ✅ Ladda om full data inkl. dueDate
   };
-  
 
   const onDragEnd = async (result) => {
     if (!isManagerOrAdmin) return;
@@ -230,15 +229,22 @@ const KanbanBoard = () => {
                                     )}
                                   </p>
                                 )}
-       {/* Visar förfallodatum om finns */}
-{item.dueDate && (
-  <p className="text-sm text-red-300">
-    ⏰ Förfallodatum:{" "}
-    {dayjs(item.dueDate).format("YYYY-MM-DD")}
-  </p>
-)}
-
-
+                                {/* Visar förfallodatum om finns */}
+                                {item.dueDate && (
+                                  <p
+                                    className={`text-sm ${
+                                      dayjs(item.dueDate).isBefore(
+                                        dayjs(),
+                                        "day"
+                                      )
+                                        ? "text-red-400 font-semibold"
+                                        : "text-red-300"
+                                    }`}
+                                  >
+                                    ⏰ Förfallodatum:{" "}
+                                    {dayjs(item.dueDate).format("YYYY-MM-DD")}
+                                  </p>
+                                )}
 
                                 {/* Visar tilldelad användare eller ej tilldelad */}
                                 {item.assignedTo ? (
