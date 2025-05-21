@@ -24,7 +24,14 @@ const Login = () => {
         navigate("/kanban");
       }
     } catch (err) {
-      alert("Fel inloggning");
+      const msg = err.response?.data?.msg;
+      if (msg?.includes("låst")) {
+        alert("Kontot är låst. Kontakta IT-avdelningen.");
+      } else if (msg?.includes("inaktivt")) {
+        alert("Kontot är inaktivt. Kontakta administratör.");
+      } else {
+        alert("Fel inloggning");
+      }
     }
   };
 
@@ -70,20 +77,16 @@ const Login = () => {
                 Logga in
               </button>
 
-              <div className="text-center text-sm text-gray-600 mb-6">
-                <a href="#!" className="hover:underline">
-                  Glömt lösenord?
-                </a>
-              </div>
 
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-700">Har du inget konto?</p>
                 <button
-                  type="button"
-                  className="text-danger border border-danger px-4 py-1 text-xs rounded uppercase hover:bg-neutral-200"
-                >
-                  Registrera
-                </button>
+  type="button"
+  onClick={() => navigate("/register")}
+  className="text-danger border border-danger px-4 py-1 text-xs rounded uppercase hover:bg-neutral-200"
+>
+  Registrera
+</button>
               </div>
             </form>
           </div>
