@@ -92,4 +92,26 @@ router.post('/', auth, isAdmin, async (req, res) => {
 // Hämtar alla användare
 router.get('/', auth, isAdmin, userCtrl.getAllUsers);
 
+
+
+router.get('/stats', auth, isAdmin, async (req, res) => {
+  try {
+    const Order = require('../models/Order');
+    const User = require('../models/User');
+
+    const [totalOrders, toOrder, ordered, delivered, activeUsers, lockedUsers] = await Promise.all([
+      Order.countDocuments(),
+      Order.countDocuments({ status: 'Att beställa' }),
+      Order.countDocuments({ status: 'Beställd' }),
+      Order.countDocuments({ status: 'Levererad' }),
+      User.countDocuments({ active: true }),
+      User.countDocuments({ $or: [{ active: false }, { lockUntil: { $gt: new Date() } }] }),
+    ]);
+
+    res.json({ totalOrders, toOrder, ordered, delivered, activeUsers, lockedUsers });
+  } catch (err) {
+    res.status(500).json({ msg: 'Fel vid hämtning av statistik', error: err.message });
+  }
+});
+
 module.exports = router;
