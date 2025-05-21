@@ -1,4 +1,5 @@
-const router = require('express').Router();
+const express = require('express');
+const router = express.Router();
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
@@ -11,7 +12,7 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
-//  Hämtar alla managers – MÅSTE ligga före router.get('/')
+// Hämtar alla managers
 router.get('/managers', auth, async (req, res) => {
   try {
     const managers = await User.find({ role: 'manager' }).select('username email _id');
@@ -37,20 +38,32 @@ router.get('/inactive-or-locked', auth, isAdmin, async (req, res) => {
   }
 });
 
+// Återställ alla konton (låsta/inaktiva)
+router.put('/reactivate-all', auth, isAdmin, async (req, res) => {
+  try {
+    await User.updateMany(
+      { $or: [{ active: false }, { lockUntil: { $gt: new Date() } }] },
+      { $set: { active: true, loginAttempts: 0, lockUntil: null } }
+    );
+    res.json({ message: 'Alla konton återställdes' });
+  } catch (err) {
+    res.status(500).json({ msg: 'Fel vid återställning', error: err.message });
+  }
+});
+
 // Återställ lösenord
 router.put('/:id/reset-password', auth, checkPermission('manage_users'), userCtrl.resetPassword);
 
-// Raderar användare
+//  Radera användare
 router.delete('/:id', auth, isAdmin, userCtrl.deleteUser);
 
-// Uppdaterar användare
+// Uppdatera användare
 router.put('/:id', auth, isAdmin, userCtrl.updateUser);
 
-// Skapar ny användare – endast admin
+// Skapa användare
 router.post('/', auth, isAdmin, async (req, res) => {
   try {
     const { username, email, password, role, active } = req.body;
-
     if (!username || !email || !password || !role) {
       return res.status(400).json({ msg: 'Alla fält krävs' });
     }
@@ -59,7 +72,6 @@ router.post('/', auth, isAdmin, async (req, res) => {
     if (existing) return res.status(400).json({ msg: 'Användare finns redan' });
 
     const hashed = await bcrypt.hash(password, 10);
-
     const newUser = new User({
       username,
       email,
@@ -79,7 +91,5 @@ router.post('/', auth, isAdmin, async (req, res) => {
 
 // Hämtar alla användare
 router.get('/', auth, isAdmin, userCtrl.getAllUsers);
-router.get('/inactive-or-locked', userCtrl.getInactiveOrLockedUsers);
-router.put('/reactivate-all', userCtrl.reactivateAllLockedUsers);
 
 module.exports = router;
