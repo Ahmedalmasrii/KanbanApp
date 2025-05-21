@@ -64,6 +64,15 @@ const Header = () => {
           </button>
         )}
 
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => navigate('/admin')}
+            className="bg-yellow-600 hover:bg-yellow-500 text-white px-3 py-1 rounded shadow"
+          >
+            ⚙️ Adminpanel
+          </button>
+        )}
+
         <button
           onClick={handleLogout}
           className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded shadow"
