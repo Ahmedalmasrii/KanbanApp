@@ -108,3 +108,39 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ msg: 'Serverfel vid återställning' });
   }
 };
+
+
+// Hämta användare som är inaktiva eller låsta
+exports.getInactiveOrLockedUsers = async (req, res) => {
+  try {
+    const now = new Date();
+    const users = await User.find(
+      {
+        $or: [
+          { active: false },
+          { lockUntil: { $ne: null, $gt: now } }
+        ]
+      },
+      '-password'
+    );
+    res.json(users);
+  } catch (err) {
+    console.error('Fel vid hämtning av inaktiva/utlåsta:', err);
+    res.status(500).json({ msg: 'Kunde inte hämta inaktiva/utlåsta användare' });
+  }
+};
+
+
+exports.reactivateAllLockedUsers = async (req, res) => {
+  try {
+    const result = await User.updateMany(
+      { $or: [{ active: false }, { lockUntil: { $gt: new Date() } }] },
+      { $set: { active: true, lockUntil: null, loginAttempts: 0 } }
+    );
+    res.json({ message: 'Alla konton återställda', modifiedCount: result.modifiedCount });
+  } catch (err) {
+    console.error("Fel vid återställning:", err);
+    res.status(500).json({ msg: 'Kunde inte återställa konton' });
+  }
+};
+
