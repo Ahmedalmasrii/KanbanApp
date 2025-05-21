@@ -79,5 +79,7 @@ router.post('/', auth, isAdmin, async (req, res) => {
 
 // Hämtar alla användare
 router.get('/', auth, isAdmin, userCtrl.getAllUsers);
+router.get('/inactive-or-locked', userCtrl.getInactiveOrLockedUsers);
+router.put('/reactivate-all', userCtrl.reactivateAllLockedUsers);
 
 module.exports = router;
