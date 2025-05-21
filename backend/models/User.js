@@ -5,7 +5,6 @@ const userSchema = new mongoose.Schema({
   email: String,
   password: String,
   role: { type: String, enum: ['admin', 'manager', 'user', 'viewer'], default: 'user' },
-  tempPassword: { type: Boolean, default: true },
   active: { type: Boolean, default: true },
   loginAttempts: { type: Number, default: 0 },
   lockUntil: { type: Date, default: null }
