@@ -6,6 +6,7 @@ import ChangePassword from './pages/ChangePassword'; // <-- Lagt till här
 import KanbanBoard from './components/KanbanBoard';
 import AdminPanel from './pages/AdminPanel';
 import ProtectedRoute from './ProtectedRoute';
+import Register from "./pages/Register";
 
 function App() {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -14,7 +15,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/change-password" element={<ChangePassword />} /> {/* <-- Lagt till här */}
+        <Route path="/register" element={<Register />} />
+        <Route path="/change-password" element={<ChangePassword />} /> 
 
         <Route
           path="/kanban"
