@@ -7,6 +7,7 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
   const [assignedTo, setAssignedTo] = useState(order.assignedTo || '');
   const [timeline, setTimeline] = useState([]);
   const [managers, setManagers] = useState([]);
+  const [dueDate, setDueDate] = useState(order.dueDate ? order.dueDate.substring(0, 10) : '');
 
   const user = JSON.parse(localStorage.getItem('user'));
   const token = localStorage.getItem('token');
@@ -44,6 +45,14 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
         await axios.put(
           `/orders/${order._id}/assign`,
           { assignedTo },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
+      if (dueDate) {
+        await axios.put(
+          `/orders/${order._id}`,
+          { dueDate },
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }
@@ -104,6 +113,18 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="mb-4">
+                <label className="block mb-1 font-medium text-white">
+                  Förfallodatum
+                </label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full rounded px-3 py-2 bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring focus:ring-blue-500"
+                />
               </div>
             </>
           )}
