@@ -131,16 +131,28 @@ exports.getInactiveOrLockedUsers = async (req, res) => {
 };
 
 
-exports.reactivateAllLockedUsers = async (req, res) => {
+// Återaktivera alla inaktiva eller låsta konton
+exports.reactivateAllUsers = async (req, res) => {
   try {
     const result = await User.updateMany(
-      { $or: [{ active: false }, { lockUntil: { $gt: new Date() } }] },
-      { $set: { active: true, lockUntil: null, loginAttempts: 0 } }
+      {
+        $or: [
+          { active: false },
+          { lockUntil: { $gt: new Date() } }
+        ]
+      },
+      {
+        $set: {
+          active: true,
+          loginAttempts: 0,
+          lockUntil: null
+        }
+      }
     );
-    res.json({ message: 'Alla konton återställda', modifiedCount: result.modifiedCount });
+
+    res.json({ message: `Återställde ${result.modifiedCount} konton` });
   } catch (err) {
-    console.error("Fel vid återställning:", err);
+    console.error('Fel vid återställning:', err);
     res.status(500).json({ msg: 'Kunde inte återställa konton' });
   }
 };
-
