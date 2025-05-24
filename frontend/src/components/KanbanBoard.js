@@ -59,18 +59,27 @@ const KanbanBoard = () => {
     if (!input.trim()) return;
     await axios.post("/orders", { item: input });
     setInput("");
-    fetchOrders(); // ✅ Ladda om full data inkl. dueDate
+    fetchOrders();
   };
 
   const onDragEnd = async (result) => {
     if (!isManagerOrAdmin) return;
     const { source, destination } = result;
-    if (!destination) return;
+    if (
+      !destination ||
+      (source.droppableId === destination.droppableId &&
+        source.index === destination.index)
+    )
+      return;
 
-    const sourceCol = columns[source.droppableId];
-    const destCol = columns[destination.droppableId];
-    const [movedItem] = sourceCol.items.splice(source.index, 1);
-    destCol.items.splice(destination.index, 0, movedItem);
+    const sourceItems = [...columns[source.droppableId].items];
+    const destItems = [...columns[destination.droppableId].items];
+
+    const sourceFiltered = filterAndSort(sourceItems);
+    const destFiltered = filterAndSort(destItems);
+
+    const [movedItem] = sourceFiltered.splice(source.index, 1);
+    destFiltered.splice(destination.index, 0, movedItem);
 
     const timestampField =
       destination.droppableId === "ordered"
@@ -83,13 +92,17 @@ const KanbanBoard = () => {
       movedItem[timestampField] = new Date().toISOString();
     }
 
-    const newCols = {
-      ...columns,
-      [source.droppableId]: sourceCol,
-      [destination.droppableId]: destCol,
-    };
-
-    setColumns(newCols);
+    setColumns((prev) => ({
+      ...prev,
+      [source.droppableId]: {
+        ...prev[source.droppableId],
+        items: sourceFiltered,
+      },
+      [destination.droppableId]: {
+        ...prev[destination.droppableId],
+        items: destFiltered,
+      },
+    }));
 
     await axios.put(`/orders/${movedItem._id}`, {
       status: statusMap[destination.droppableId],
@@ -164,14 +177,7 @@ const KanbanBoard = () => {
             {Object.entries(columns).map(([columnId, column]) => {
               const isToDo = columnId === "toDo";
               const isAssigned = columnId === "assigned";
-              const bgColor =
-                isToDo && column.items.length > 5
-                  ? "bg-red-800"
-                  : isToDo
-                  ? "bg-green-800"
-                  : isAssigned
-                  ? "bg-indigo-800"
-                  : "bg-gray-800";
+              const sortedItems = filterAndSort(column.items);
 
               return (
                 <Droppable key={columnId} droppableId={columnId}>
@@ -179,13 +185,13 @@ const KanbanBoard = () => {
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className={`rounded-xl bg-gradient-to-b from-slate-800 to-slate-900 shadow-xl p-4 min-h-[400px] border border-slate-700`}
+                      className="rounded-xl bg-gradient-to-b from-slate-800 to-slate-900 shadow-xl p-4 min-h-[400px] border border-slate-700"
                     >
                       <h2 className="text-xl font-semibold mb-4">
                         {column.name}
                       </h2>
                       <div className="space-y-4">
-                        {filterAndSort(column.items).map((item, index) => (
+                        {sortedItems.map((item, index) => (
                           <Draggable
                             key={item._id}
                             draggableId={item._id}
@@ -196,21 +202,16 @@ const KanbanBoard = () => {
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
-                                {...(isManagerOrAdmin &&
-                                  provided.dragHandleProps)}
+                                {...provided.dragHandleProps}
                                 className="bg-slate-700 p-4 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out text-white relative border border-slate-600"
                               >
                                 <p className="font-medium">{item.item}</p>
-
-                                {/* Visar skapad tid */}
                                 <p className="text-sm text-gray-300 mt-1">
                                   {item.createdAt &&
                                     `Skapad: ${dayjs(item.createdAt).format(
                                       "YYYY-MM-DD HH:mm"
                                     )}`}
                                 </p>
-
-                                {/* Visar beställd tid om finns */}
                                 {item.orderedAt && (
                                   <p className="text-sm text-blue-300">
                                     Beställd:{" "}
@@ -219,8 +220,6 @@ const KanbanBoard = () => {
                                     )}
                                   </p>
                                 )}
-
-                                {/* Visar levererad tid om finns */}
                                 {item.deliveredAt && (
                                   <p className="text-sm text-green-300">
                                     Levererad:{" "}
@@ -229,7 +228,6 @@ const KanbanBoard = () => {
                                     )}
                                   </p>
                                 )}
-                                {/* Visar förfallodatum om finns */}
                                 {item.dueDate && (
                                   <p
                                     className={`text-sm ${
@@ -245,8 +243,6 @@ const KanbanBoard = () => {
                                     {dayjs(item.dueDate).format("YYYY-MM-DD")}
                                   </p>
                                 )}
-
-                                {/* Visar tilldelad användare eller ej tilldelad */}
                                 {item.assignedTo ? (
                                   <p className="text-xs mt-2 text-indigo-300">
                                     👤 Tilldelad till:{" "}
@@ -257,8 +253,6 @@ const KanbanBoard = () => {
                                     🚫 Ej tilldelad
                                   </p>
                                 )}
-
-                                {/* Statusbadge */}
                                 <p
                                   className={`text-xs mt-2 inline-block px-2 py-1 rounded font-medium ${
                                     item.status === "todo"
