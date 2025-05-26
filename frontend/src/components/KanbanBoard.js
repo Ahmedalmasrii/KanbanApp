@@ -157,25 +157,25 @@ const KanbanBoard = () => {
         <NotificationToast message={toastMessage} onClose={() => setToastMessage("")} />
       )}
       <div className="bg-gray-900 text-white min-h-screen p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-extrabold text-white mb-6 text-center">📋 Beställnings-Kanban</h1>
+      <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+  <h1 className="text-3xl font-extrabold text-white text-center w-full md:w-auto">📋 Beställnings-Kanban</h1>
 
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ny beställning"
-              className="bg-gray-700 text-white border border-gray-600 rounded px-3 py-2"
-            />
-            <button
-              onClick={handleAddItem}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition transform hover:scale-105"
-            >
-              Lägg till
-            </button>
-          </div>
-        </div>
+  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+    <input
+      type="text"
+      value={input}
+      onChange={(e) => setInput(e.target.value)}
+      placeholder="Ny beställning"
+      className="bg-gray-700 text-white border border-gray-600 rounded px-3 py-2 w-full sm:w-auto"
+    />
+    <button
+      onClick={handleAddItem}
+      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow transition transform hover:scale-105 w-full sm:w-auto"
+    >
+      Lägg till
+    </button>
+  </div>
+</div>
 
         <div className="flex gap-4 mb-6">
           <input
