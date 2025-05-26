@@ -16,7 +16,8 @@ const orderSchema = new mongoose.Schema({
   comment: String,
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   comments: [commentSchema],
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  deleted: { type: Boolean, default: false }
 });
 
-module.exports = mongoose.model('Order', orderSchema);
+module.exports = mongoose.models.Order || mongoose.model('Order', orderSchema);
