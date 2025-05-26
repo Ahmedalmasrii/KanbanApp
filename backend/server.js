@@ -15,6 +15,7 @@ app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/stats", require("./routes/statsRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
+app.use("/api/activity", require("./routes/activityRoutes"));
 
 // MONGODB CONNECTION
 mongoose
