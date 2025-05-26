@@ -8,6 +8,7 @@ import AdminPanel from './pages/AdminPanel';
 import ProtectedRoute from './ProtectedRoute';
 import Register from './pages/Register';
 import StatsPanel from './pages/StatsPanel';
+import AuditTrail from './components/AuditTrail';
 
 function App() {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -46,7 +47,15 @@ function App() {
           }
         />
 
-        {/* Denna SKA ligga sist – fångar upp ogiltiga länkar */}
+        <Route
+          path="/audit"
+          element={
+            <ProtectedRoute>
+              {(user?.role === 'admin' || user?.role === 'manager') ? <AuditTrail /> : <Navigate to="/kanban" />}
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="*" element={<Navigate to="/kanban" />} />
       </Routes>
     </Router>
