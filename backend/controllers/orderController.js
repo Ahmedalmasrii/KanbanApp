@@ -1,6 +1,8 @@
 const Order = require('../models/Order');
 const Notification = require('../models/Notification');
 const Comment = require('../models/Comment');
+const AuditLog = require('../models/ActivityLog');
+const User = require('../models/User');
 
 exports.getOrders = async (req, res) => {
   try {
@@ -24,6 +26,12 @@ exports.createOrder = async (req, res) => {
     });
 
     await newOrder.save();
+
+    await AuditLog.create({
+      user: req.user.id,
+      action: `Skapade ny beställning: "${item}"`
+    });
+
     res.status(201).json(newOrder);
   } catch (err) {
     res.status(500).json({ msg: 'Kunde inte skapa beställning' });
@@ -43,14 +51,17 @@ exports.updateOrderStatus = async (req, res) => {
     const updated = await Order.findByIdAndUpdate(id, updateFields, { new: true });
 
     if (updated && updated.createdBy && updated.createdBy.toString() !== req.user.id) {
-      console.log(`🔔 Skickar notis till användare: ${updated.createdBy}`);
       await Notification.create({
         orderId: updated._id,
         userId: updated.createdBy,
         message: `Din beställning "${updated.item}" har nu statusen: ${status}.`
       });
     }
-    
+
+    await AuditLog.create({
+      user: req.user.id,
+      action: `Uppdaterade status på "${updated.item}" till "${status}"`
+    });
 
     res.json(updated);
   } catch (err) {
@@ -82,6 +93,21 @@ exports.updateOrderDetails = async (req, res) => {
     ).populate('assignedTo');
 
     if (!updatedOrder) return res.status(404).json({ msg: 'Beställning hittades inte' });
+
+    if (assignedTo) {
+      await AuditLog.create({
+        user: req.user.id,
+        action: `Tilldelade "${updatedOrder.item}" till ${assignedTo}`
+      });
+    }
+
+    if (comment) {
+      await AuditLog.create({
+        user: req.user.id,
+        action: `Kommenterade "${updatedOrder.item}": "${comment}"`
+      });
+    }
+
     res.json(updatedOrder);
   } catch (err) {
     res.status(500).json({ msg: 'Kunde inte uppdatera beställningen', error: err.message });
@@ -95,6 +121,12 @@ exports.softDeleteOrder = async (req, res) => {
 
     order.deleted = true;
     await order.save();
+
+    await AuditLog.create({
+      user: req.user.id,
+      action: `Tog bort beställningen "${order.item}" (soft delete)`
+    });
+
     res.status(200).json({ msg: 'Beställning markerad som borttagen (soft delete)' });
   } catch (err) {
     res.status(500).json({ msg: 'Serverfel vid soft delete', error: err.message });
@@ -118,6 +150,12 @@ exports.addOrderComment = async (req, res) => {
       text: req.body.text,
     });
     await newComment.save();
+
+    await AuditLog.create({
+      user: req.user.id,
+      action: `Lade till kommentar till order ${req.params.id}: "${req.body.text}"`
+    });
+
     res.status(201).json({ msg: 'Kommentar tillagd' });
   } catch {
     res.status(500).json({ msg: 'Kunde inte lägga till kommentar' });
@@ -131,13 +169,18 @@ exports.assignManager = async (req, res) => {
       { assignedTo: req.body.assignedTo },
       { new: true }
     );
+
+    await AuditLog.create({
+      user: req.user.id,
+      action: `Tilldelade beställning ${req.params.id} till ${req.body.assignedTo}`
+    });
+
     res.json(updated);
   } catch {
     res.status(500).json({ msg: 'Kunde inte tilldela chef' });
   }
 };
 
-// 🔔 Notifikationer
 exports.getUserNotifications = async (req, res) => {
   try {
     const notis = await Notification.find({ userId: req.user.id, read: false }).sort({ createdAt: -1 });
@@ -153,5 +196,16 @@ exports.markNotificationsAsRead = async (req, res) => {
     res.json({ msg: 'Alla notifikationer markerade som lästa' });
   } catch {
     res.status(500).json({ msg: 'Kunde inte uppdatera notifikationer' });
+  }
+};
+
+exports.getAuditLogs = async (req, res) => {
+  try {
+    const logs = await AuditLog.find()
+      .sort({ timestamp: -1 })
+      .populate('user', 'username role');
+    res.json(logs);
+  } catch {
+    res.status(500).json({ msg: 'Kunde inte hämta audit trail' });
   }
 };
