@@ -1,9 +1,10 @@
 const Order = require('../models/Order');
+const Notification = require('../models/Notification');
 const Comment = require('../models/Comment');
 
 exports.getOrders = async (req, res) => {
   try {
-    const orders = await Order.find().populate('assignedTo');
+    const orders = await Order.find({ deleted: false }).populate('assignedTo');
     res.json(orders);
   } catch (err) {
     res.status(500).json({ msg: 'Kunde inte hämta beställningar' });
@@ -40,6 +41,17 @@ exports.updateOrderStatus = async (req, res) => {
     if (dueDate) updateFields.dueDate = dueDate;
 
     const updated = await Order.findByIdAndUpdate(id, updateFields, { new: true });
+
+    if (updated && updated.createdBy && updated.createdBy.toString() !== req.user.id) {
+      console.log(`🔔 Skickar notis till användare: ${updated.createdBy}`);
+      await Notification.create({
+        orderId: updated._id,
+        userId: updated.createdBy,
+        message: `Din beställning "${updated.item}" har nu statusen: ${status}.`
+      });
+    }
+    
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ msg: 'Kunde inte uppdatera beställning' });
@@ -76,19 +88,16 @@ exports.updateOrderDetails = async (req, res) => {
   }
 };
 
-exports.deleteOrder = async (req, res) => {
+exports.softDeleteOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ msg: 'Beställning hittades inte' });
 
-    if (order.status !== 'delivered') {
-      return res.status(403).json({ msg: 'Endast levererade beställningar kan tas bort' });
-    }
-
-    await order.deleteOne();
-    res.status(200).json({ msg: 'Beställning borttagen' });
+    order.deleted = true;
+    await order.save();
+    res.status(200).json({ msg: 'Beställning markerad som borttagen (soft delete)' });
   } catch (err) {
-    res.status(500).json({ msg: 'Serverfel vid radering', error: err.message });
+    res.status(500).json({ msg: 'Serverfel vid soft delete', error: err.message });
   }
 };
 
@@ -125,5 +134,24 @@ exports.assignManager = async (req, res) => {
     res.json(updated);
   } catch {
     res.status(500).json({ msg: 'Kunde inte tilldela chef' });
+  }
+};
+
+// 🔔 Notifikationer
+exports.getUserNotifications = async (req, res) => {
+  try {
+    const notis = await Notification.find({ userId: req.user.id, read: false }).sort({ createdAt: -1 });
+    res.json(notis);
+  } catch {
+    res.status(500).json({ msg: 'Kunde inte hämta notifikationer' });
+  }
+};
+
+exports.markNotificationsAsRead = async (req, res) => {
+  try {
+    await Notification.updateMany({ userId: req.user.id, read: false }, { read: true });
+    res.json({ msg: 'Alla notifikationer markerade som lästa' });
+  } catch {
+    res.status(500).json({ msg: 'Kunde inte uppdatera notifikationer' });
   }
 };
