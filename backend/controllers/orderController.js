@@ -1,11 +1,14 @@
+// Importerar nödvändiga modeller
 const Order = require('../models/Order');
 const Notification = require('../models/Notification');
 const Comment = require('../models/Comment');
 const AuditLog = require('../models/ActivityLog');
 const User = require('../models/User');
 
+// Hämta alla beställningar
 exports.getOrders = async (req, res) => {
   try {
+    // Hämtar alla beställningar som inte är markerade som raderade
     const orders = await Order.find({ deleted: false }).populate('assignedTo');
     res.json(orders);
   } catch (err) {
@@ -13,11 +16,13 @@ exports.getOrders = async (req, res) => {
   }
 };
 
+// Skapa en ny beställning
 exports.createOrder = async (req, res) => {
   try {
     const { item, dueDate } = req.body;
     if (!item) return res.status(400).json({ msg: 'Beställning saknar innehåll' });
 
+    // Skapar en ny beställning
     const newOrder = new Order({
       item,
       status: 'todo',
@@ -27,6 +32,7 @@ exports.createOrder = async (req, res) => {
 
     await newOrder.save();
 
+    // Loggar händelsen
     await AuditLog.create({
       user: req.user.id,
       action: `Skapade ny beställning: "${item}"`
@@ -38,18 +44,21 @@ exports.createOrder = async (req, res) => {
   }
 };
 
+// Uppdatera status på en beställning
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, dueDate } = req.body;
 
     const updateFields = { status };
+    // Om statusen ändras, sätt ett datumfält för beställd/levererad
     if (status === 'ordered') updateFields.orderedAt = new Date();
     if (status === 'delivered') updateFields.deliveredAt = new Date();
     if (dueDate) updateFields.dueDate = dueDate;
 
     const updated = await Order.findByIdAndUpdate(id, updateFields, { new: true });
 
+    // Skapar notifikation om någon annan än beställaren uppdaterar statusen
     if (updated && updated.createdBy && updated.createdBy.toString() !== req.user.id) {
       await Notification.create({
         orderId: updated._id,
@@ -58,6 +67,7 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
+    // Loggar händelsen
     await AuditLog.create({
       user: req.user.id,
       action: `Uppdaterade status på "${updated.item}" till "${status}"`
@@ -69,6 +79,7 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
+// Uppdatera detaljer på en beställning (t.ex. tilldela chef, kommentar)
 exports.updateOrderDetails = async (req, res) => {
   try {
     const { assignedTo, comment, dueDate } = req.body;
@@ -77,6 +88,7 @@ exports.updateOrderDetails = async (req, res) => {
     if (assignedTo) update.assignedTo = assignedTo;
     if (dueDate) update.dueDate = dueDate;
 
+    // Lägg till kommentar om det finns
     if (comment) {
       update.$push = {
         comments: {
@@ -94,6 +106,7 @@ exports.updateOrderDetails = async (req, res) => {
 
     if (!updatedOrder) return res.status(404).json({ msg: 'Beställning hittades inte' });
 
+    // Loggar tilldelning och kommentarer
     if (assignedTo) {
       await AuditLog.create({
         user: req.user.id,
@@ -114,6 +127,7 @@ exports.updateOrderDetails = async (req, res) => {
   }
 };
 
+// Soft delete på beställning (tar inte bort den helt)
 exports.softDeleteOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -133,6 +147,7 @@ exports.softDeleteOrder = async (req, res) => {
   }
 };
 
+// Hämta alla kommentarer för en beställning
 exports.getOrderComments = async (req, res) => {
   try {
     const comments = await Comment.find({ orderId: req.params.id }).sort({ timestamp: 1 });
@@ -142,6 +157,7 @@ exports.getOrderComments = async (req, res) => {
   }
 };
 
+// Lägg till en kommentar på en beställning
 exports.addOrderComment = async (req, res) => {
   try {
     const newComment = new Comment({
@@ -162,6 +178,7 @@ exports.addOrderComment = async (req, res) => {
   }
 };
 
+// Tilldela ansvarig chef
 exports.assignManager = async (req, res) => {
   try {
     const updated = await Order.findByIdAndUpdate(
@@ -181,6 +198,7 @@ exports.assignManager = async (req, res) => {
   }
 };
 
+// Hämta olästa notifikationer för användaren
 exports.getUserNotifications = async (req, res) => {
   try {
     const notis = await Notification.find({ userId: req.user.id, read: false }).sort({ createdAt: -1 });
@@ -190,6 +208,7 @@ exports.getUserNotifications = async (req, res) => {
   }
 };
 
+// Markera alla notifikationer som lästa
 exports.markNotificationsAsRead = async (req, res) => {
   try {
     await Notification.updateMany({ userId: req.user.id, read: false }, { read: true });
@@ -199,6 +218,7 @@ exports.markNotificationsAsRead = async (req, res) => {
   }
 };
 
+// Hämta alla audit logs (för spårbarhet)
 exports.getAuditLogs = async (req, res) => {
   try {
     const logs = await AuditLog.find()

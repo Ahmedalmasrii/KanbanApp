@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import axios from '../api/axios';
-import { motion, AnimatePresence } from 'framer-motion';
+import axios from '../api/axios';  // Axios används för HTTP-anrop till backend
+import { motion, AnimatePresence } from 'framer-motion';  // För snyggare animering
 
+// Komponent för modal där man kan redigera beställningar
 const OrderModal = ({ order, onClose, fetchOrders }) => {
+  // Local state för formulärfälten
   const [comment, setComment] = useState('');
   const [assignedTo, setAssignedTo] = useState(order.assignedTo || '');
-  const [timeline, setTimeline] = useState([]);
-  const [managers, setManagers] = useState([]);
+  const [timeline, setTimeline] = useState([]); // Historik för kommentarer
+  const [managers, setManagers] = useState([]); // Lista med managers att välja
   const [dueDate, setDueDate] = useState(order.dueDate ? order.dueDate.substring(0, 10) : '');
 
+  // Hämtar användarinfo från localStorage
   const user = JSON.parse(localStorage.getItem('user'));
   const token = localStorage.getItem('token');
   const isManagerOrAdmin = ['manager', 'admin'].includes(user?.role);
 
+  // useEffect för att hämta kommentarer och managers när modalen öppnas
   useEffect(() => {
     if (!order?._id) return;
 
+    // Hämta kommentarer
     axios
       .get(`/orders/${order._id}/comments`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -23,6 +28,7 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
       .then((res) => setTimeline(res.data))
       .catch(() => setTimeline([]));
 
+    // Hämta lista på managers
     axios
       .get('/users/managers', {
         headers: { Authorization: `Bearer ${token}` }
@@ -31,8 +37,10 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
       .catch(() => setManagers([]));
   }, [order._id]);
 
+  // Funktion för att spara ändringar
   const handleSave = async () => {
     try {
+      // Spara kommentar
       if (comment) {
         await axios.post(
           `/orders/${order._id}/comments`,
@@ -41,6 +49,7 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
         );
       }
 
+      // Tilldela manager
       if (assignedTo) {
         await axios.put(
           `/orders/${order._id}/assign`,
@@ -49,6 +58,7 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
         );
       }
 
+      // Spara förfallodatum
       if (dueDate) {
         await axios.put(
           `/orders/${order._id}`,
@@ -57,6 +67,7 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
         );
       }
 
+      // Uppdatera listan och stäng modalen
       fetchOrders();
       onClose();
     } catch (err) {
@@ -67,12 +78,14 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
 
   return (
     <AnimatePresence>
+      {/* Modal-bakgrund */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
       >
+        {/* Själva modal-fönstret */}
         <motion.div
           initial={{ scale: 0.8, y: -50 }}
           animate={{ scale: 1, y: 0 }}
@@ -82,8 +95,10 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
         >
           <h2 className="text-2xl font-bold mb-4">📝 Ändra beställning</h2>
 
+          {/* Formulär för kommentarer, manager och förfallodatum – synligt bara för managers/admins */}
           {isManagerOrAdmin && (
             <>
+              {/* Kommentar */}
               <div className="mb-4">
                 <label className="block mb-1 font-medium text-white">
                   Kommentar
@@ -97,6 +112,7 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
                 />
               </div>
 
+              {/* Tilldela manager */}
               <div className="mb-4">
                 <label className="block mb-1 font-medium text-white">
                   Tilldela till chef
@@ -115,6 +131,7 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
                 </select>
               </div>
 
+              {/* Förfallodatum */}
               <div className="mb-4">
                 <label className="block mb-1 font-medium text-white">
                   Förfallodatum
@@ -129,6 +146,7 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
             </>
           )}
 
+          {/* Kommentarhistorik */}
           <h3 className="font-medium mt-6 mb-2">🕓 Kommentarhistorik</h3>
           <div className="bg-gray-900 p-3 rounded max-h-40 overflow-y-auto border border-gray-700 text-sm">
             {timeline.length > 0 ? (
@@ -145,6 +163,7 @@ const OrderModal = ({ order, onClose, fetchOrders }) => {
             )}
           </div>
 
+          {/* Knappar för Avbryt och Spara */}
           <div className="flex justify-end mt-6 gap-3">
             <button
               onClick={onClose}

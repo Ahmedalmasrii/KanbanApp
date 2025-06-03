@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import axios from '../api/axios';
-import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
-import { useNavigate } from 'react-router-dom';
+import axios from '../api/axios'; // Axios för API-anrop
+import dayjs from 'dayjs'; // Datumformattering
+import * as XLSX from 'xlsx'; // Exportera till Excel
+import { useNavigate } from 'react-router-dom'; // För navigering
 
 const AuditTrail = () => {
+  // State för audit-loggar, filtrerade loggar, laddningsstatus, sökfält och datumfilter
   const [logs, setLogs] = useState([]);
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,6 +14,7 @@ const AuditTrail = () => {
   const [toDate, setToDate] = useState('');
   const navigate = useNavigate();
 
+  // Hämtar alla loggar från backend när komponenten laddas
   useEffect(() => {
     const fetchLogs = async () => {
       try {
@@ -20,8 +22,8 @@ const AuditTrail = () => {
         const res = await axios.get('/activity/logs', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setLogs(res.data);
-        setFilteredLogs(res.data);
+        setLogs(res.data); // Spara loggar
+        setFilteredLogs(res.data); // Visa direkt
         setLoading(false);
       } catch (err) {
         console.error('Kunde inte hämta loggar');
@@ -32,6 +34,7 @@ const AuditTrail = () => {
     fetchLogs();
   }, []);
 
+  // Funktion för filtrering utifrån sökfält och datumfilter
   const handleSearch = () => {
     const filtered = logs.filter(log => {
       const searchMatch =
@@ -49,6 +52,7 @@ const AuditTrail = () => {
     setFilteredLogs(filtered);
   };
 
+  // Funktion för export till Excel
   const exportToExcel = () => {
     const worksheetData = filteredLogs.map(log => ({
       Tidpunkt: dayjs(log.timestamp).format('YYYY-MM-DD HH:mm:ss'),
@@ -62,16 +66,19 @@ const AuditTrail = () => {
     XLSX.writeFile(workbook, 'AuditTrail.xlsx');
   };
 
+  // Funktion för utskrift (öppnar webbläsarens print-dialog)
   const handlePrint = () => {
     window.print();
   };
 
+  // Gå tillbaka till Kanban-sidan
   const handleBack = () => {
     navigate('/kanban');
   };
 
   return (
     <div className="p-6 bg-gray-900 text-white min-h-screen">
+      {/* Header med titel och tillbaka-knapp */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold">🧾 Audit Trail</h1>
         <button
@@ -82,8 +89,9 @@ const AuditTrail = () => {
         </button>
       </div>
 
-      {/* Filtersektion – mobilvänlig */}
+      {/* Filtersektion för sökning och datum */}
       <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3 mb-6">
+        {/* Sökfält */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <label htmlFor="search" className="text-sm">🔍</label>
           <input
@@ -96,6 +104,7 @@ const AuditTrail = () => {
           />
         </div>
 
+        {/* Från-datum */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <label htmlFor="fromDate" className="text-sm">📅 Från</label>
           <input
@@ -107,6 +116,7 @@ const AuditTrail = () => {
           />
         </div>
 
+        {/* Till-datum */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <label htmlFor="toDate" className="text-sm">📅 Till</label>
           <input
@@ -118,6 +128,7 @@ const AuditTrail = () => {
           />
         </div>
 
+        {/* Filtrera-knapp */}
         <button
           onClick={handleSearch}
           className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded shadow-sm transition w-full sm:w-auto"
@@ -125,6 +136,7 @@ const AuditTrail = () => {
           🔍 Filtrera
         </button>
 
+        {/* Exportera till Excel-knapp */}
         <button
           onClick={exportToExcel}
           className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded shadow-sm transition w-full sm:w-auto"
@@ -132,6 +144,7 @@ const AuditTrail = () => {
           📥 Exportera till Excel
         </button>
 
+        {/* Skriv ut-knapp */}
         <button
           onClick={handlePrint}
           className="bg-yellow-600 hover:bg-yellow-500 text-white px-4 py-2 rounded shadow-sm transition w-full sm:w-auto"

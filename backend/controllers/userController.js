@@ -1,29 +1,33 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 
-// Skapa ny användare
+// Skapa en ny användare
 exports.createUser = async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
 
+    // Kontrollera att alla fält är ifyllda
     if (!username || !email || !password || !role) {
       return res.status(400).json({ msg: 'Alla fält krävs' });
     }
 
+    // Kontrollera om användaren redan finns
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ msg: 'Användare finns redan' });
     }
 
+    // Kryptera lösenordet
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Skapa ny användare
     const user = new User({
       username,
       email,
       password: hashedPassword,
       role,
       active: true,
-      tempPassword: true,
+      tempPassword: true, // flaggar för att användaren ska byta lösenord vid första inloggning
     });
 
     await user.save();
@@ -34,22 +38,23 @@ exports.createUser = async (req, res) => {
   }
 };
 
-// Hämta alla användare (utan lösenord)
+// Hämta alla användare (utan att visa lösenord)
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}, '-password');
+    const users = await User.find({}, '-password'); // exkluderar lösenordet
     res.json(users);
   } catch (err) {
     res.status(500).json({ msg: 'Kunde inte hämta användare' });
   }
 };
 
-// Uppdatera användarroll/aktiv status
+// Uppdatera användarroll och aktiv status
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { role, active } = req.body;
 
+    // Uppdaterar användarroll och status
     const updated = await User.findByIdAndUpdate(
       id,
       { role, active },
@@ -66,7 +71,7 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-// Radera användare
+// Radera användare permanent
 exports.deleteUser = async (req, res) => {
   try {
     const deleted = await User.findByIdAndDelete(req.params.id);
@@ -81,7 +86,7 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-// Återställ lösenord
+// Återställ lösenord för användare
 exports.resetPassword = async (req, res) => {
   try {
     const { id } = req.params;
@@ -91,10 +96,13 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ msg: 'Nytt lösenord krävs' });
     }
 
+    // Krypterar det nya lösenordet
     const hashed = await bcrypt.hash(newPassword, 10);
+
+    // Uppdaterar användaren med nytt lösenord och nollställer låsningen
     const updatedUser = await User.findByIdAndUpdate(id, {
       password: hashed,
-      tempPassword: true,
+      tempPassword: true,  // flaggar för att lösenordet är nytt
       loginAttempts: 0,
       active: true,
       lockUntil: null
@@ -109,11 +117,12 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-
 // Hämta användare som är inaktiva eller låsta
 exports.getInactiveOrLockedUsers = async (req, res) => {
   try {
     const now = new Date();
+
+    // Hämta alla användare som är inaktiva eller har kontolåsning
     const users = await User.find(
       {
         $or: [
@@ -121,7 +130,7 @@ exports.getInactiveOrLockedUsers = async (req, res) => {
           { lockUntil: { $ne: null, $gt: now } }
         ]
       },
-      '-password'
+      '-password' // exkluderar lösenord
     );
     res.json(users);
   } catch (err) {
@@ -129,7 +138,6 @@ exports.getInactiveOrLockedUsers = async (req, res) => {
     res.status(500).json({ msg: 'Kunde inte hämta inaktiva/utlåsta användare' });
   }
 };
-
 
 // Återaktivera alla inaktiva eller låsta konton
 exports.reactivateAllUsers = async (req, res) => {
