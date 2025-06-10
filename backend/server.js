@@ -2,7 +2,6 @@ const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
-const path = require("path");
 
 dotenv.config();
 
@@ -17,6 +16,7 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/stats", require("./routes/statsRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/activity", require("./routes/activityRoutes"));
+app.use("/api/license", require("./routes/licenseRoutes")); // Glöm inte denna!
 
 // MONGODB CONNECTION
 mongoose
