@@ -7,7 +7,10 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: ['https://c3kanban.netlify.app'], // eller '*'
+  credentials: true
+}));
 
 // ROUTES
 app.use("/api/auth", require("./routes/authRoutes"));
@@ -16,7 +19,7 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/stats", require("./routes/statsRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/activity", require("./routes/activityRoutes"));
-app.use("/api/license", require("./routes/licenseRoutes")); // Glöm inte denna!
+app.use("/api/license", require("./routes/licenseRoutes"));
 
 // MONGODB CONNECTION
 mongoose
