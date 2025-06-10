@@ -4,12 +4,24 @@ const License = require('../models/License');
 
 // Aktivera licens
 router.post('/activate', async (req, res) => {
-  const { licenseKey } = req.body;
+  const { licenseKey, companyName } = req.body;
+
+  if (!licenseKey || !companyName) {
+    return res.status(400).json({ msg: 'Licensnyckel och företagsnamn krävs.' });
+  }
+
   try {
-    const license = await License.findOne({ licenseKey }); // Korrekt fält
+    // Kolla om företaget redan har en licensnyckel
+    const existingLicense = await License.findOne({ companyName });
+
+    if (existingLicense && existingLicense.licenseKey !== licenseKey) {
+      return res.status(400).json({ msg: 'Det finns redan en licens registrerad för detta företag.' });
+    }
+
+    const license = await License.findOne({ licenseKey, companyName });
 
     if (!license) {
-      return res.status(400).json({ msg: 'Ogiltig licensnyckel.' });
+      return res.status(400).json({ msg: 'Ogiltig licensnyckel eller företagsnamn.' });
     }
 
     if (!license.active) {
@@ -20,7 +32,7 @@ router.post('/activate', async (req, res) => {
       return res.status(400).json({ msg: 'Licensen har gått ut.' });
     }
 
-    res.status(200).json({ msg: 'Licens aktiverad!' });
+    res.status(200).json({ msg: 'Licensen är aktiverad!' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ msg: 'Serverfel vid aktivering av licens.' });
@@ -29,12 +41,17 @@ router.post('/activate', async (req, res) => {
 
 // Verifiera licens
 router.post('/verify', async (req, res) => {
-  const { licenseKey } = req.body;
+  const { licenseKey, companyName } = req.body;
+
+  if (!licenseKey || !companyName) {
+    return res.status(400).json({ valid: false, msg: 'Licensnyckel och företagsnamn krävs.' });
+  }
+
   try {
-    const license = await License.findOne({ licenseKey });
+    const license = await License.findOne({ licenseKey, companyName });
 
     if (!license) {
-      return res.status(400).json({ valid: false, msg: 'Ogiltig licensnyckel.' });
+      return res.status(400).json({ valid: false, msg: 'Ogiltig licensnyckel eller företagsnamn.' });
     }
 
     if (!license.active) {
