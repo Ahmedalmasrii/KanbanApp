@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 import Login from './pages/Login';
@@ -9,9 +9,42 @@ import ProtectedRoute from './ProtectedRoute';
 import Register from './pages/Register';
 import StatsPanel from './pages/StatsPanel';
 import AuditTrail from './components/AuditTrail';
+import LicenseActivation from './pages/LicenseActivation';
+import axios from './utils/axiosConfig'; // OBS: Glöm inte denna!
 
 function App() {
   const user = JSON.parse(localStorage.getItem('user'));
+  const [isLicenseValid, setIsLicenseValid] = useState(false);
+
+  useEffect(() => {
+    const licenseKey = localStorage.getItem('licenseKey');
+    if (licenseKey) {
+      axios.post('/license/verify', { licenseKey })
+        .then(res => {
+          if (res.data.valid) {
+            setIsLicenseValid(true);
+          } else {
+            setIsLicenseValid(false);
+            localStorage.removeItem('licenseKey');
+          }
+        })
+        .catch(err => {
+          console.error('Licensverifiering misslyckades:', err);
+          setIsLicenseValid(false);
+          localStorage.removeItem('licenseKey');
+        });
+    }
+  }, []);
+
+  if (!isLicenseValid) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="*" element={<LicenseActivation onLicenseActivated={() => setIsLicenseValid(true)} />} />
+        </Routes>
+      </Router>
+    );
+  }
 
   return (
     <Router>

@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const userCtrl = require('../controllers/userController');
 const checkPermission = require('../middleware/permissions');
+const checkLicense = require('../middleware/checkLicense');
 
 // Middleware för admin-roll
 const isAdmin = (req, res, next) => {
@@ -13,7 +14,7 @@ const isAdmin = (req, res, next) => {
 };
 
 // Hämtar alla managers
-router.get('/managers', auth, async (req, res) => {
+router.get('/managers', auth, checkLicense, async (req, res) => {
   try {
     const managers = await User.find({ role: 'manager' }).select('username email _id');
     res.json(managers);
@@ -23,7 +24,7 @@ router.get('/managers', auth, async (req, res) => {
 });
 
 // Hämtar inaktiva/låsta konton
-router.get('/inactive-or-locked', auth, isAdmin, async (req, res) => {
+router.get('/inactive-or-locked', auth, checkLicense, isAdmin, async (req, res) => {
   try {
     const now = new Date();
     const users = await User.find({
@@ -39,7 +40,7 @@ router.get('/inactive-or-locked', auth, isAdmin, async (req, res) => {
 });
 
 // Återställ alla konton (låsta/inaktiva)
-router.put('/reactivate-all', auth, isAdmin, async (req, res) => {
+router.put('/reactivate-all', auth, checkLicense, isAdmin, async (req, res) => {
   try {
     await User.updateMany(
       { $or: [{ active: false }, { lockUntil: { $gt: new Date() } }] },
@@ -52,16 +53,16 @@ router.put('/reactivate-all', auth, isAdmin, async (req, res) => {
 });
 
 // Återställ lösenord
-router.put('/:id/reset-password', auth, checkPermission('manage_users'), userCtrl.resetPassword);
+router.put('/:id/reset-password', auth, checkLicense, checkPermission('manage_users'), userCtrl.resetPassword);
 
-//  Radera användare
-router.delete('/:id', auth, isAdmin, userCtrl.deleteUser);
+// Radera användare
+router.delete('/:id', auth, checkLicense, isAdmin, userCtrl.deleteUser);
 
 // Uppdatera användare
-router.put('/:id', auth, isAdmin, userCtrl.updateUser);
+router.put('/:id', auth, checkLicense, isAdmin, userCtrl.updateUser);
 
 // Skapa användare
-router.post('/', auth, isAdmin, async (req, res) => {
+router.post('/', auth, checkLicense, isAdmin, async (req, res) => {
   try {
     const { username, email, password, role, active } = req.body;
     if (!username || !email || !password || !role) {
@@ -90,11 +91,10 @@ router.post('/', auth, isAdmin, async (req, res) => {
 });
 
 // Hämtar alla användare
-router.get('/', auth, isAdmin, userCtrl.getAllUsers);
+router.get('/', auth, checkLicense, isAdmin, userCtrl.getAllUsers);
 
-
-
-router.get('/stats', auth, isAdmin, async (req, res) => {
+// Admin Stats (kan ev. flyttas till statsRoutes.js)
+router.get('/stats', auth, checkLicense, isAdmin, async (req, res) => {
   try {
     const Order = require('../models/Order');
     const User = require('../models/User');

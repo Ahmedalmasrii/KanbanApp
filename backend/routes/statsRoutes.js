@@ -2,8 +2,11 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const User = require('../models/User');
+const auth = require('../middleware/auth');
+const checkLicense = require('../middleware/checkLicense');
 
-router.get('/', async (req, res) => {
+// Hämta statistik
+router.get('/', auth, checkLicense, async (req, res) => {
   try {
     const totalOrders = await Order.countDocuments();
     const toOrder = await Order.countDocuments({ status: 'todo' });
