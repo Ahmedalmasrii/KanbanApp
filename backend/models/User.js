@@ -1,19 +1,19 @@
-const mongoose = require('mongoose'); // Importerar mongoose för att hantera databasscheman
+const mongoose = require('mongoose');
 
 // Definierar användarschemat
 const userSchema = new mongoose.Schema({
-  username: String, // Användarnamn
-  email: String,    // E-postadress
-  password: String, // Hashat lösenord
+  username: String,
+  email: String,
+  password: String,
   role: { 
     type: String, 
-    enum: ['admin', 'manager', 'user', 'viewer'], // Användarroll
-    default: 'user' // Standardroll
+    enum: ['admin', 'manager', 'user', 'viewer'],
+    default: 'user'
   },
-  active: { type: Boolean, default: true }, // Om kontot är aktivt eller ej
-  loginAttempts: { type: Number, default: 0 }, // Räknare för inloggningsförsök (för att låsa konton vid fel)
-  lockUntil: { type: Date, default: null } // Om kontot är låst (tidpunkt fram till när det är låst)
+  active: { type: Boolean, default: true },
+  loginAttempts: { type: Number, default: 0 },
+  lockUntil: { type: Date, default: null },
+  companyName: { type: String, required: true } // KNYTER användaren till företaget
 });
 
-// Exporterar modellen
 module.exports = mongoose.model('User', userSchema);

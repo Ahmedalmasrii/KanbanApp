@@ -1,30 +1,30 @@
-const mongoose = require('mongoose'); // Importerar mongoose för att hantera databasscheman
+const mongoose = require('mongoose');
 
-// Schema för kommentarer kopplat till en order
+// Kommentar-schema
 const commentSchema = new mongoose.Schema({
-  user: String, // Vem skrev kommentaren
-  text: String, // Kommentartext
-  timestamp: { type: Date, default: Date.now } // När kommentaren skapades
+  user: String,
+  text: String,
+  timestamp: { type: Date, default: Date.now }
 });
 
-// Schema för en order
+// Order-schema
 const orderSchema = new mongoose.Schema({
-  item: String, // Namn eller beskrivning av beställningen
-  status: { 
-    type: String, 
-    enum: ['todo', 'ordered', 'delivered'], // Statusalternativ
-    default: 'todo' // Standardstatus
+  item: String,
+  status: {
+    type: String,
+    enum: ['todo', 'ordered', 'delivered'],
+    default: 'todo'
   },
-  createdAt: { type: Date, default: Date.now }, // När beställningen skapades
-  orderedAt: Date, // Datum när beställningen markerades som "ordered"
-  deliveredAt: Date, // Datum när beställningen markerades som "delivered"
-  dueDate: Date, // Sista datum för beställningen
-  comment: String, // Eventuell kommentar (ej samma som arrayen nedan)
-  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Tilldelad användare
-  comments: [commentSchema], // Array av kommentarer
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Vem som skapade beställningen
-  deleted: { type: Boolean, default: false } // Soft delete för beställningen
+  createdAt: { type: Date, default: Date.now },
+  orderedAt: Date,
+  deliveredAt: Date,
+  dueDate: Date,
+  comment: String,
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  comments: [commentSchema],
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  deleted: { type: Boolean, default: false },
+  companyName: { type: String, required: true } // Viktigt för företagsisolering!
 });
 
-// Exporterar modellen
 module.exports = mongoose.models.Order || mongoose.model('Order', orderSchema);

@@ -1,15 +1,16 @@
-// Importerar nödvändiga modeller
 const Order = require('../models/Order');
 const Notification = require('../models/Notification');
 const Comment = require('../models/Comment');
 const AuditLog = require('../models/ActivityLog');
 const User = require('../models/User');
 
-// Hämta alla beställningar
+// Hämta alla beställningar för företaget
 exports.getOrders = async (req, res) => {
   try {
-    // Hämtar alla beställningar som inte är markerade som raderade
-    const orders = await Order.find({ deleted: false }).populate('assignedTo');
+    const orders = await Order.find({
+      deleted: false,
+      companyName: req.user.companyName
+    }).populate('assignedTo');
     res.json(orders);
   } catch (err) {
     res.status(500).json({ msg: 'Kunde inte hämta beställningar' });
@@ -22,20 +23,20 @@ exports.createOrder = async (req, res) => {
     const { item, dueDate } = req.body;
     if (!item) return res.status(400).json({ msg: 'Beställning saknar innehåll' });
 
-    // Skapar en ny beställning
     const newOrder = new Order({
       item,
       status: 'todo',
       createdBy: req.user.id,
-      dueDate: dueDate || null
+      dueDate: dueDate || null,
+      companyName: req.user.companyName
     });
 
     await newOrder.save();
 
-    // Loggar händelsen
     await AuditLog.create({
       user: req.user.id,
-      action: `Skapade ny beställning: "${item}"`
+      action: `Skapade ny beställning: "${item}"`,
+      companyName: req.user.companyName
     });
 
     res.status(201).json(newOrder);
@@ -44,33 +45,36 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-// Uppdatera status på en beställning
+// Uppdatera status
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, dueDate } = req.body;
 
     const updateFields = { status };
-    // Om statusen ändras, sätt ett datumfält för beställd/levererad
     if (status === 'ordered') updateFields.orderedAt = new Date();
     if (status === 'delivered') updateFields.deliveredAt = new Date();
     if (dueDate) updateFields.dueDate = dueDate;
 
-    const updated = await Order.findByIdAndUpdate(id, updateFields, { new: true });
+    const updated = await Order.findOneAndUpdate(
+      { _id: id, companyName: req.user.companyName },
+      updateFields,
+      { new: true }
+    );
 
-    // Skapar notifikation om någon annan än beställaren uppdaterar statusen
-    if (updated && updated.createdBy && updated.createdBy.toString() !== req.user.id) {
+    if (updated && updated.createdBy?.toString() !== req.user.id) {
       await Notification.create({
         orderId: updated._id,
         userId: updated.createdBy,
-        message: `Din beställning "${updated.item}" har nu statusen: ${status}.`
+        message: `Din beställning "${updated.item}" har nu statusen: ${status}.`,
+        companyName: req.user.companyName
       });
     }
 
-    // Loggar händelsen
     await AuditLog.create({
       user: req.user.id,
-      action: `Uppdaterade status på "${updated.item}" till "${status}"`
+      action: `Uppdaterade status på "${updated.item}" till "${status}"`,
+      companyName: req.user.companyName
     });
 
     res.json(updated);
@@ -79,16 +83,13 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
-// Uppdatera detaljer på en beställning (t.ex. tilldela chef, kommentar)
+// Uppdatera detaljer
 exports.updateOrderDetails = async (req, res) => {
   try {
     const { assignedTo, comment, dueDate } = req.body;
     const update = {};
-
     if (assignedTo) update.assignedTo = assignedTo;
     if (dueDate) update.dueDate = dueDate;
-
-    // Lägg till kommentar om det finns
     if (comment) {
       update.$push = {
         comments: {
@@ -98,26 +99,27 @@ exports.updateOrderDetails = async (req, res) => {
       };
     }
 
-    const updatedOrder = await Order.findByIdAndUpdate(
-      req.params.id,
+    const updatedOrder = await Order.findOneAndUpdate(
+      { _id: req.params.id, companyName: req.user.companyName },
       update,
       { new: true }
     ).populate('assignedTo');
 
     if (!updatedOrder) return res.status(404).json({ msg: 'Beställning hittades inte' });
 
-    // Loggar tilldelning och kommentarer
     if (assignedTo) {
       await AuditLog.create({
         user: req.user.id,
-        action: `Tilldelade "${updatedOrder.item}" till ${assignedTo}`
+        action: `Tilldelade "${updatedOrder.item}" till ${assignedTo}`,
+        companyName: req.user.companyName
       });
     }
 
     if (comment) {
       await AuditLog.create({
         user: req.user.id,
-        action: `Kommenterade "${updatedOrder.item}": "${comment}"`
+        action: `Kommenterade "${updatedOrder.item}": "${comment}"`,
+        companyName: req.user.companyName
       });
     }
 
@@ -127,10 +129,14 @@ exports.updateOrderDetails = async (req, res) => {
   }
 };
 
-// Soft delete på beställning (tar inte bort den helt)
+// Soft delete
 exports.softDeleteOrder = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const order = await Order.findOne({
+      _id: req.params.id,
+      companyName: req.user.companyName
+    });
+
     if (!order) return res.status(404).json({ msg: 'Beställning hittades inte' });
 
     order.deleted = true;
@@ -138,7 +144,8 @@ exports.softDeleteOrder = async (req, res) => {
 
     await AuditLog.create({
       user: req.user.id,
-      action: `Tog bort beställningen "${order.item}" (soft delete)`
+      action: `Tog bort beställningen "${order.item}" (soft delete)`,
+      companyName: req.user.companyName
     });
 
     res.status(200).json({ msg: 'Beställning markerad som borttagen (soft delete)' });
@@ -147,9 +154,15 @@ exports.softDeleteOrder = async (req, res) => {
   }
 };
 
-// Hämta alla kommentarer för en beställning
+// Hämta kommentarer
 exports.getOrderComments = async (req, res) => {
   try {
+    const order = await Order.findOne({
+      _id: req.params.id,
+      companyName: req.user.companyName
+    });
+    if (!order) return res.status(404).json({ msg: 'Beställning hittades inte' });
+
     const comments = await Comment.find({ orderId: req.params.id }).sort({ timestamp: 1 });
     res.json(comments);
   } catch {
@@ -157,19 +170,26 @@ exports.getOrderComments = async (req, res) => {
   }
 };
 
-// Lägg till en kommentar på en beställning
+// Lägg till kommentar
 exports.addOrderComment = async (req, res) => {
   try {
+    const order = await Order.findOne({
+      _id: req.params.id,
+      companyName: req.user.companyName
+    });
+    if (!order) return res.status(404).json({ msg: 'Beställning hittades inte' });
+
     const newComment = new Comment({
       orderId: req.params.id,
       user: req.user.username,
-      text: req.body.text,
+      text: req.body.text
     });
     await newComment.save();
 
     await AuditLog.create({
       user: req.user.id,
-      action: `Lade till kommentar till order ${req.params.id}: "${req.body.text}"`
+      action: `Lade till kommentar till order ${req.params.id}: "${req.body.text}"`,
+      companyName: req.user.companyName
     });
 
     res.status(201).json({ msg: 'Kommentar tillagd' });
@@ -178,18 +198,20 @@ exports.addOrderComment = async (req, res) => {
   }
 };
 
-// Tilldela ansvarig chef
+// Tilldela chef
 exports.assignManager = async (req, res) => {
   try {
-    const updated = await Order.findByIdAndUpdate(
-      req.params.id,
+    const updated = await Order.findOneAndUpdate(
+      { _id: req.params.id, companyName: req.user.companyName },
       { assignedTo: req.body.assignedTo },
       { new: true }
     );
+    if (!updated) return res.status(404).json({ msg: 'Beställning hittades inte' });
 
     await AuditLog.create({
       user: req.user.id,
-      action: `Tilldelade beställning ${req.params.id} till ${req.body.assignedTo}`
+      action: `Tilldelade beställning ${req.params.id} till ${req.body.assignedTo}`,
+      companyName: req.user.companyName
     });
 
     res.json(updated);
@@ -198,32 +220,39 @@ exports.assignManager = async (req, res) => {
   }
 };
 
-// Hämta olästa notifikationer för användaren
+// Hämta olästa notiser
 exports.getUserNotifications = async (req, res) => {
   try {
-    const notis = await Notification.find({ userId: req.user.id, read: false }).sort({ createdAt: -1 });
+    const notis = await Notification.find({
+      userId: req.user.id,
+      read: false,
+      companyName: req.user.companyName
+    }).sort({ createdAt: -1 });
     res.json(notis);
   } catch {
     res.status(500).json({ msg: 'Kunde inte hämta notifikationer' });
   }
 };
 
-// Markera alla notifikationer som lästa
+// Markera notiser som lästa
 exports.markNotificationsAsRead = async (req, res) => {
   try {
-    await Notification.updateMany({ userId: req.user.id, read: false }, { read: true });
+    await Notification.updateMany(
+      { userId: req.user.id, read: false, companyName: req.user.companyName },
+      { read: true }
+    );
     res.json({ msg: 'Alla notifikationer markerade som lästa' });
   } catch {
     res.status(500).json({ msg: 'Kunde inte uppdatera notifikationer' });
   }
 };
 
-// Hämta alla audit logs (för spårbarhet)
+// Hämta audit-loggar
 exports.getAuditLogs = async (req, res) => {
   try {
-    const logs = await AuditLog.find()
-      .sort({ timestamp: -1 })
-      .populate('user', 'username role');
+    const logs = await AuditLog.find({
+      companyName: req.user.companyName
+    }).sort({ timestamp: -1 }).populate('user', 'username role');
     res.json(logs);
   } catch {
     res.status(500).json({ msg: 'Kunde inte hämta audit trail' });

@@ -6,28 +6,25 @@ exports.createUser = async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
 
-    // Kontrollera att alla fält är ifyllda
     if (!username || !email || !password || !role) {
       return res.status(400).json({ msg: 'Alla fält krävs' });
     }
 
-    // Kontrollera om användaren redan finns
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ msg: 'Användare finns redan' });
     }
 
-    // Kryptera lösenordet
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Skapa ny användare
     const user = new User({
       username,
       email,
       password: hashedPassword,
       role,
       active: true,
-      tempPassword: true, // flaggar för att användaren ska byta lösenord vid första inloggning
+      tempPassword: true,
+      companyName: req.user.companyName // NYTT!
     });
 
     await user.save();
@@ -37,6 +34,7 @@ exports.createUser = async (req, res) => {
     res.status(500).json({ msg: 'Serverfel vid skapande av användare' });
   }
 };
+
 
 // Hämta alla användare (utan att visa lösenord)
 exports.getAllUsers = async (req, res) => {
