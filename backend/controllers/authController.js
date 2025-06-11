@@ -6,22 +6,18 @@ const jwt = require('jsonwebtoken');
 exports.createUser = async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
+    const companyName = req.user.companyName;
 
-    if (!username || !email || !password || !role) {
-      return res.status(400).json({ msg: 'Alla fält krävs' });
+    if (!username || !email || !password || !role || !companyName) {
+      return res.status(400).json({ msg: 'Alla fält krävs inklusive företagsnamn' });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email, companyName });
     if (existingUser) {
       return res.status(400).json({ msg: 'Användare finns redan' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    const companyName = req.user.companyName;
-    if (!companyName) {
-      return res.status(400).json({ msg: 'Företagsnamn saknas' });
-    }
 
     const user = new User({
       username,
@@ -167,7 +163,7 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-// Registrera användare (frontend-anrop)
+// Registrera användare (frontend)
 exports.register = async (req, res) => {
   try {
     const { username, email, password, role, companyName } = req.body;
@@ -176,7 +172,7 @@ exports.register = async (req, res) => {
       return res.status(400).json({ msg: 'Alla fält krävs' });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email, companyName });
     if (existingUser) {
       return res.status(400).json({ msg: 'Användare finns redan' });
     }
@@ -203,11 +199,13 @@ exports.register = async (req, res) => {
 
 // Logga in användare
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, companyName } = req.body;
 
   try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: 'Fel e-post eller lösenord' });
+    const user = await User.findOne({ email, companyName });
+    if (!user) {
+      return res.status(400).json({ msg: 'Fel e-post, lösenord eller företag' });
+    }
 
     if (!user.active) {
       return res.status(400).json({ msg: 'Kontot är inaktivt. Kontakta administratör.' });
@@ -221,7 +219,7 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       user.loginAttempts += 1;
       if (user.loginAttempts >= 3) {
-        user.lockUntil = Date.now() + 60 * 60 * 1000; // 1 timmes låsning
+        user.lockUntil = Date.now() + 60 * 60 * 1000;
       }
       await user.save();
       return res.status(400).json({ msg: 'Fel e-post eller lösenord' });
@@ -241,7 +239,8 @@ exports.login = async (req, res) => {
 
     res.json({
       token,
-      mustChangePassword: user.tempPassword
+      mustChangePassword: user.tempPassword,
+      companyName: user.companyName
     });
   } catch (err) {
     console.error('Fel vid inloggning:', err);

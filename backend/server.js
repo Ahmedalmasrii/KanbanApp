@@ -8,9 +8,13 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: ['https://c3kanban.netlify.app'], // eller '*'
-  credentials: true
+  origin: [
+    'https://c3kanban.netlify.app',
+    /\.netlify\.app$/,
+    /\.onrender\.com$/
+  ]
 }));
+
 
 // ROUTES
 app.use("/api/auth", require("./routes/authRoutes"));

@@ -5,12 +5,13 @@ const bcrypt = require('bcryptjs');
 exports.createUser = async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
+    const companyName = req.user.companyName;
 
-    if (!username || !email || !password || !role) {
-      return res.status(400).json({ msg: 'Alla fält krävs' });
+    if (!username || !email || !password || !role || !companyName) {
+      return res.status(400).json({ msg: 'Alla fält krävs inklusive företagsnamn' });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email, companyName });
     if (existingUser) {
       return res.status(400).json({ msg: 'Användare finns redan' });
     }
@@ -24,7 +25,7 @@ exports.createUser = async (req, res) => {
       role,
       active: true,
       tempPassword: true,
-      companyName: req.user.companyName // NYTT!
+      companyName
     });
 
     await user.save();
@@ -35,11 +36,13 @@ exports.createUser = async (req, res) => {
   }
 };
 
-
-// Hämta alla användare (utan att visa lösenord)
+// Hämta alla användare
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}, '-password'); // exkluderar lösenordet
+    const users = await User.find(
+      { companyName: req.user.companyName },
+      '-password'
+    );
     res.json(users);
   } catch (err) {
     res.status(500).json({ msg: 'Kunde inte hämta användare' });
@@ -52,9 +55,8 @@ exports.updateUser = async (req, res) => {
     const { id } = req.params;
     const { role, active } = req.body;
 
-    // Uppdaterar användarroll och status
-    const updated = await User.findByIdAndUpdate(
-      id,
+    const updated = await User.findOneAndUpdate(
+      { _id: id, companyName: req.user.companyName },
       { role, active },
       { new: true }
     );
@@ -72,7 +74,10 @@ exports.updateUser = async (req, res) => {
 // Radera användare permanent
 exports.deleteUser = async (req, res) => {
   try {
-    const deleted = await User.findByIdAndDelete(req.params.id);
+    const deleted = await User.findOneAndDelete({
+      _id: req.params.id,
+      companyName: req.user.companyName
+    });
 
     if (!deleted) {
       return res.status(404).json({ msg: 'Användare hittades inte' });
@@ -84,7 +89,7 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-// Återställ lösenord för användare
+// Återställ lösenord
 exports.resetPassword = async (req, res) => {
   try {
     const { id } = req.params;
@@ -94,20 +99,19 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ msg: 'Nytt lösenord krävs' });
     }
 
-    // Krypterar det nya lösenordet
+    const user = await User.findOne({ _id: id, companyName: req.user.companyName });
+    if (!user) {
+      return res.status(404).json({ msg: 'Användare hittades inte' });
+    }
+
     const hashed = await bcrypt.hash(newPassword, 10);
+    user.password = hashed;
+    user.tempPassword = true;
+    user.loginAttempts = 0;
+    user.active = true;
+    user.lockUntil = null;
 
-    // Uppdaterar användaren med nytt lösenord och nollställer låsningen
-    const updatedUser = await User.findByIdAndUpdate(id, {
-      password: hashed,
-      tempPassword: true,  // flaggar för att lösenordet är nytt
-      loginAttempts: 0,
-      active: true,
-      lockUntil: null
-    }, { new: true });
-
-    if (!updatedUser) return res.status(404).json({ msg: 'Användare hittades inte' });
-
+    await user.save();
     res.json({ msg: 'Lösenord återställdes' });
   } catch (err) {
     console.error('Fel vid återställning:', err);
@@ -115,44 +119,40 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-// Hämta användare som är inaktiva eller låsta
+// Hämta inaktiva eller låsta användare
 exports.getInactiveOrLockedUsers = async (req, res) => {
   try {
     const now = new Date();
-
-    // Hämta alla användare som är inaktiva eller har kontolåsning
     const users = await User.find(
       {
+        companyName: req.user.companyName,
         $or: [
           { active: false },
           { lockUntil: { $ne: null, $gt: now } }
         ]
       },
-      '-password' // exkluderar lösenord
+      '-password'
     );
     res.json(users);
   } catch (err) {
-    console.error('Fel vid hämtning av inaktiva/utlåsta:', err);
-    res.status(500).json({ msg: 'Kunde inte hämta inaktiva/utlåsta användare' });
+    console.error('Fel vid hämtning:', err);
+    res.status(500).json({ msg: 'Kunde inte hämta användare' });
   }
 };
 
-// Återaktivera alla inaktiva eller låsta konton
+// Återaktivera alla konton
 exports.reactivateAllUsers = async (req, res) => {
   try {
     const result = await User.updateMany(
       {
+        companyName: req.user.companyName,
         $or: [
           { active: false },
           { lockUntil: { $gt: new Date() } }
         ]
       },
       {
-        $set: {
-          active: true,
-          loginAttempts: 0,
-          lockUntil: null
-        }
+        $set: { active: true, loginAttempts: 0, lockUntil: null }
       }
     );
 
