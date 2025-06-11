@@ -1,21 +1,22 @@
-import axios from "axios"; // Importerar axios för HTTP-anrop
+import axios from "axios";
 
-// Skapar en axios-instans med grundläggande konfiguration
-const instance = axios.create({
-  // Bas-URL för alla anrop (ändra till din produktionsserver vid behov)
+const api = axios.create({
   baseURL: "https://kanbanapp-u467.onrender.com/api",
   headers: {
-    "Content-Type": "application/json", // Alla anrop skickar JSON
+    "Content-Type": "application/json",
   },
 });
 
-// Interceptor som automatiskt lägger till JWT-token i varje anrop
-instance.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token"); // Hämta token från localStorage
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  const licenseKey = localStorage.getItem("licenseKey");
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`; // Lägg till i Authorization-headern
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (licenseKey) {
+    config.headers["x-license-key"] = licenseKey;
   }
   return config;
 });
 
-export default instance; // Exporterar instansen för användning i projektet
+export default api;

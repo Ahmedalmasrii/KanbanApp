@@ -41,26 +41,32 @@ const AdminPanel = () => {
     }
   };
 // Funktioner för att skapa, uppdatera, radera och återställa lösenord för användare
-  const createUser = async (e) => {
-    e.preventDefault();
-    if (!newUser.username || !newUser.email || !newUser.password) {
-      return alert('Fyll i alla fält!');
-    }
+const createUser = async (e) => {
+  e.preventDefault();
+  if (!newUser.username || !newUser.email || !newUser.password) {
+    return alert('Fyll i alla fält!');
+  }
 
-    try {
-      await axios.post('/users', newUser);
-      refreshData();
-      setNewUser({
-        username: '',
-        email: '',
-        password: '',
-        role: 'user',
-        active: true,
-      });
-    } catch (err) {
-      alert('Kunde inte skapa användaren.');
-    }
-  };
+  const companyName = localStorage.getItem('companyName');
+  if (!companyName) {
+    return alert('Licensnyckel eller företagsnamn saknas.');
+  }
+
+  try {
+    await axios.post('/users', { ...newUser, companyName });
+    refreshData();
+    setNewUser({
+      username: '',
+      email: '',
+      password: '',
+      role: 'user',
+      active: true,
+    });
+  } catch (err) {
+    alert('Kunde inte skapa användaren.');
+  }
+};
+
 
   const updateUser = async (id, updates) => {
     try {
