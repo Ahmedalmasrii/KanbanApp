@@ -22,11 +22,12 @@ const Register = () => {
         email,
         password,
         role: "user",
+        companyName: localStorage.getItem("companyName")
       });
       alert("Konto skapat! Du kan nu logga in.");
       navigate("/login");
     } catch (err) {
-      setError(err.response?.data?.message || "Registrering misslyckades");
+      setError(err.response?.data?.msg || "Registrering misslyckades");
     }
   };
 

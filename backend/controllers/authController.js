@@ -1,7 +1,8 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-// Skapa ny användare
+// Skapa ny användare (admin)
 exports.createUser = async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
@@ -17,6 +18,11 @@ exports.createUser = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const companyName = req.user.companyName;
+    if (!companyName) {
+      return res.status(400).json({ msg: 'Företagsnamn saknas' });
+    }
+
     const user = new User({
       username,
       email,
@@ -24,6 +30,7 @@ exports.createUser = async (req, res) => {
       role,
       active: true,
       tempPassword: true,
+      companyName
     });
 
     await user.save();
@@ -37,7 +44,10 @@ exports.createUser = async (req, res) => {
 // Hämta alla användare (utan lösenord)
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}, '-password');
+    const users = await User.find(
+      { companyName: req.user.companyName },
+      '-password'
+    );
     res.json(users);
   } catch (err) {
     res.status(500).json({ msg: 'Kunde inte hämta användare' });
@@ -50,6 +60,7 @@ exports.getInactiveOrLockedUsers = async (req, res) => {
     const now = new Date();
     const users = await User.find(
       {
+        companyName: req.user.companyName,
         $or: [
           { active: false },
           { lockUntil: { $ne: null, $gt: now } }
@@ -69,6 +80,7 @@ exports.unlockAllUsers = async (req, res) => {
   try {
     await User.updateMany(
       {
+        companyName: req.user.companyName,
         $or: [
           { active: false },
           { lockUntil: { $ne: null, $gt: new Date() } }
@@ -91,8 +103,8 @@ exports.updateUser = async (req, res) => {
     const { id } = req.params;
     const { role, active } = req.body;
 
-    const updated = await User.findByIdAndUpdate(
-      id,
+    const updated = await User.findOneAndUpdate(
+      { _id: id, companyName: req.user.companyName },
       { role, active },
       { new: true }
     );
@@ -110,7 +122,10 @@ exports.updateUser = async (req, res) => {
 // Radera användare
 exports.deleteUser = async (req, res) => {
   try {
-    const deleted = await User.findByIdAndDelete(req.params.id);
+    const deleted = await User.findOneAndDelete({
+      _id: req.params.id,
+      companyName: req.user.companyName
+    });
 
     if (!deleted) {
       return res.status(404).json({ msg: 'Användare hittades inte' });
@@ -132,85 +147,109 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ msg: 'Nytt lösenord krävs' });
     }
 
+    const user = await User.findOne({ _id: id, companyName: req.user.companyName });
+    if (!user) {
+      return res.status(404).json({ msg: 'Användare hittades inte' });
+    }
+
     const hashed = await bcrypt.hash(newPassword, 10);
-    const updatedUser = await User.findByIdAndUpdate(id, {
-      password: hashed,
-      tempPassword: true,
-      loginAttempts: 0,
-      active: true,
-      lockUntil: null
-    }, { new: true });
+    user.password = hashed;
+    user.tempPassword = true;
+    user.loginAttempts = 0;
+    user.active = true;
+    user.lockUntil = null;
 
-    if (!updatedUser) return res.status(404).json({ msg: 'Användare hittades inte' });
-
+    await user.save();
     res.json({ msg: 'Lösenord återställdes' });
   } catch (err) {
     console.error('Fel vid återställning:', err);
     res.status(500).json({ msg: 'Serverfel vid återställning' });
   }
 };
-// Registrera användare
+
+// Registrera användare (frontend-anrop)
 exports.register = async (req, res) => {
-  // Du kan återanvända din createUser-logik här om du vill
-  const { username, email, password, role } = req.body;
+  try {
+    const { username, email, password, role, companyName } = req.body;
 
-  if (!username || !email || !password || !role) {
-    return res.status(400).json({ msg: "Alla fält krävs" });
+    if (!username || !email || !password || !role || !companyName) {
+      return res.status(400).json({ msg: 'Alla fält krävs' });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ msg: 'Användare finns redan' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+      role,
+      active: true,
+      tempPassword: true,
+      companyName
+    });
+
+    await newUser.save();
+    res.status(201).json({ msg: 'Användare registrerad' });
+  } catch (err) {
+    console.error('Fel vid registrering:', err);
+    res.status(500).json({ msg: 'Serverfel vid registrering' });
   }
-
-  const existingUser = await User.findOne({ email });
-  if (existingUser) return res.status(400).json({ msg: "Användare finns redan" });
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const newUser = new User({
-    username,
-    email,
-    password: hashedPassword,
-    role,
-    active: true,
-    tempPassword: true
-  });
-
-  await newUser.save();
-  res.status(201).json({ msg: "Användare registrerad" });
 };
 
 // Logga in användare
-const jwt = require("jsonwebtoken");
-
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: "Fel e-post eller lösenord" });
+    if (!user) return res.status(400).json({ msg: 'Fel e-post eller lösenord' });
+
+    if (!user.active) {
+      return res.status(400).json({ msg: 'Kontot är inaktivt. Kontakta administratör.' });
+    }
+
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+      return res.status(400).json({ msg: 'Kontot är låst. Kontakta administratör.' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ msg: "Fel e-post eller lösenord" });
+    if (!isMatch) {
+      user.loginAttempts += 1;
+      if (user.loginAttempts >= 3) {
+        user.lockUntil = Date.now() + 60 * 60 * 1000; // 1 timmes låsning
+      }
+      await user.save();
+      return res.status(400).json({ msg: 'Fel e-post eller lösenord' });
+    }
 
-    // Token skapad med user-id och role
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    user.loginAttempts = 0;
+    user.lockUntil = null;
+    await user.save();
+
+    const payload = {
+      id: user._id,
+      role: user.role,
+      companyName: user.companyName
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
 
     res.json({
       token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
+      mustChangePassword: user.tempPassword
     });
   } catch (err) {
-    res.status(500).json({ msg: "Serverfel vid inloggning" });
+    console.error('Fel vid inloggning:', err);
+    res.status(500).json({ msg: 'Serverfel vid inloggning' });
   }
 };
 
-
-// Ändra lösenord
+// Placeholder för ändra lösenord
 exports.changePassword = async (req, res) => {
-  // Placeholder – implementera med auth-token osv
-  res.send("Change password fungerar (placeholder)");
+  res.send('Change password fungerar (placeholder)');
 };

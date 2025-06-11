@@ -13,11 +13,18 @@ const Login = () => {
     try {
       const res = await axios.post("/auth/login", { email, password });
       localStorage.setItem("token", res.data.token);
+
+      // Dekoda JWT och extrahera id, role och companyName
       const decoded = JSON.parse(atob(res.data.token.split(".")[1]));
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ id: decoded.id, role: decoded.role })
-      );
+      localStorage.setItem("user", JSON.stringify({
+        id: decoded.id,
+        role: decoded.role,
+        companyName: decoded.companyName
+      }));
+
+      // Spara även companyName separat
+      localStorage.setItem("companyName", decoded.companyName);
+
       if (res.data.mustChangePassword) {
         navigate("/change-password");
       } else {
@@ -30,7 +37,7 @@ const Login = () => {
       } else if (msg?.includes("inaktivt")) {
         alert("Kontot är inaktivt. Kontakta administratör.");
       } else {
-        alert("Fel inloggning");
+        alert("Fel e-post eller lösenord.");
       }
     }
   };
@@ -70,31 +77,29 @@ const Login = () => {
                 type="submit"
                 className="w-full mb-3 py-2 text-white font-medium text-sm uppercase rounded shadow transition duration-150"
                 style={{
-                  background:
-                    "linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593)",
+                  background: "linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593)",
                 }}
               >
                 Logga in
               </button>
 
-
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-700">Har du inget konto?</p>
                 <button
-  type="button"
-  onClick={() => navigate("/register")}
-  className="text-danger border border-danger px-4 py-1 text-xs rounded uppercase hover:bg-neutral-200"
->
-  Registrera
-</button>
+                  type="button"
+                  onClick={() => navigate("/register")}
+                  className="text-danger border border-danger px-4 py-1 text-xs rounded uppercase hover:bg-neutral-200"
+                >
+                  Registrera
+                </button>
               </div>
             </form>
           </div>
+
           <div
             className="hidden lg:flex lg:w-6/12 items-center justify-center text-white px-10 py-8"
             style={{
-              background:
-                "linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593)",
+              background: "linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593)",
             }}
           >
             <div>
