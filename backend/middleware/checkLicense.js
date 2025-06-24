@@ -3,6 +3,7 @@ const User = require('../models/User');
 
 const checkLicense = async (req, res, next) => {
   const licenseKey = req.headers['x-license-key'] || req.body.licenseKey;
+  const currentPath = req.headers.referer?.split('/')[3] || ''; // t.ex. 'c3' från http://localhost:3000/c3
 
   if (!licenseKey) {
     return res.status(400).json({ msg: 'Licensnyckel krävs.' });
@@ -23,7 +24,11 @@ const checkLicense = async (req, res, next) => {
       return res.status(403).json({ msg: 'Licensen har gått ut.' });
     }
 
-    const userCount = await User.countDocuments({ company: license.companyName });
+    if (license.urlPath.replace('/', '') !== currentPath) {
+      return res.status(403).json({ msg: 'Licensnyckeln är inte giltig för denna länk.' });
+    }
+
+    const userCount = await User.countDocuments({ companyName: license.companyName });
     if (userCount >= license.maxUsers) {
       return res.status(403).json({ msg: 'Användargräns har nåtts för denna licens.' });
     }

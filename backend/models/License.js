@@ -6,6 +6,7 @@ const licenseSchema = new mongoose.Schema({
   maxUsers: { type: Number, required: true },
   validUntil: { type: Date, required: true },
   active: { type: Boolean, default: true },
+  urlPath: { type: String, required: true } // t.ex. "/c3"
 });
 
 module.exports = mongoose.model('License', licenseSchema);

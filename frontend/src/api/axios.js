@@ -1,7 +1,18 @@
 import axios from "axios";
+import licenseMap from "../utils/licenseMap"; // Importera vår map
+
+const path = window.location.pathname.toLowerCase();
+
+// Om licens inte finns, sätt baserat på path
+if (!localStorage.getItem("licenseKey")) {
+  const key = licenseMap[path];
+  if (key) {
+    localStorage.setItem("licenseKey", key);
+  }
+}
 
 const api = axios.create({
-  baseURL: "https://kanbanapp-u467.onrender.com/api",
+  baseURL: "http://localhost:5000/api", // Lokalt
   headers: {
     "Content-Type": "application/json",
   },
